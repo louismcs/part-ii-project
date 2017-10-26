@@ -1,0 +1,53 @@
+.	Format
+1	Anchor only
+2	Anchor + stills/ graphic
+3	Anchor + film
+4	Anchor + live film
+5	Anchor + anchor on location (live)
+6	Anchor + anchor on location (not live)
+7	Anchor + reporter in studio + graphics
+8	Reporter in studio + graphics
+9	Field Report with live introduction in the field
+11	Live Field Report with intro 
+12	Non-live Field Report with intro 
+13	Live Stand-alone Field Report
+14	Non-live Stand-alone Field Report
+15	Live Field Report with intro: reporter from other media 
+16	Non-live Field Report with intro: reporter from other media
+17	Live Stand-alone Field Report: reporter from other media
+18	Non-live Stand-alone Field Report: reporter from other media
+19	Live Field Report with intro: with Iraqi unit
+20	Live Stand-alone Field Report: with Iraqi unit
+21	Non-live Field Report with intro: with Iraqi unit
+22	Non-live Stand-alone Field Report: with Iraqi unit
+30	Interview with UK politician
+31	Interview with US politician
+32	Interview with Iraqi politician
+33	Interview with Iraqi politician in exile
+34	Interview with international politician (not US) 
+35	Interview with UK military personnel
+36	Interview with US/ coalition military personnel
+37	Interview with Iraqi military personnel
+41	Interview with anti-war spokesperson (aligned)
+42	Interview with UN representative
+43	Interview with NGO/ aid worker
+44	Interview with Academic Expert
+45	Interview with Military Expert
+46	Interview with Other Expert
+51	Interview with Reporter(s) (in studio)
+61	Interview with Outside Reporter(s): live: satellite link
+62	Interview with Outside Reporter(s): live: video phone
+63	Interview with Outside Reporter(s): live: phone with graphics
+64	Interview with Outside Reporter(s): not live: satellite link
+65	Interview with Outside Reporter(s): not live: video phone
+66	Interview with Outside Reporter(s): not live: phone with graphics
+71	Interview with Reporter(s) from other media (explicit mention): studio
+72	Interview with Reporter(s) from other media: live: satellite link
+73	Interview with Reporter(s) from other media: live: video phone
+74	Interview with Reporter(s) from other media: live: phone with graphics
+75	Interview with Reporter(s) from other media: not live: satellite link
+76	Interview with Reporter(s) from other media: not live: video phone
+77	Interview with Reporter(s) from other media: not live: phone with graphics
+81	Round-table discussion
+91	Editorial/ Commentary
+99	Other

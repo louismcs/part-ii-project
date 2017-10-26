@@ -1,0 +1,280 @@
+Subject (Whom)	Label
+500	Tony Blair
+501	Geoff Hoon
+502	Gordon Brown
+503	Jack Straw
+504	David Blunkett
+505	John Reid
+506	Peter Hain
+507	Alistair Campbell
+508	Simon Wren (in Qatar)
+509	Clare Short
+510	Robin Cook (pre-resignation)
+511	Ann Clywd
+512	Other (Cabinet) Minister
+513	Downing Street named source
+514	Downing Street unnamed source
+515	Downing Street anonymous source
+516	Downing Street leaked source
+517	Foreign Office named source
+518	Foreign Office unnamed source
+519	Foreign Office anonymous source
+520	Foreign Office leaked source
+521	MoD named source
+522	MoD unnamed source
+523	MoD anonymous source
+524	MoD leaked source
+525	Other UK Government named source
+526	Other UK Government unnamed source
+527	Other Labour MP/Lord (not anti-war)
+528	Other Labour supporter (not anti-war)
+529	Labour unnamed source (not anti-war)
+530	Leaked government source
+531	Government document/ figures
+532	UK diplomat
+533	Police/ spokesperson
+534	UK intelligence sources
+540	Robin Cook (post-resignation)
+541	George Galloway
+542	Ken Livingstone
+543	Other Labour MP/Lord (anti-war)
+544	Other Labour supporter (anti-war)
+545	Labour unnamed source (anti-war)
+550	Ian Duncan Smith
+551	Michael Howard
+552	Oliver Letwin
+553	Michael Ancram: shadow foreign secretary
+554	Other Shadow Cabinet pro-war
+555	Other Con MP/Lord (not anti-war)
+556	Conservative unnamed source (not anti-war)
+557	Other Conservative supporter (not anti-war)
+570	Other Shadow Cabinet anti-war
+571	Kenneth Clarke
+572	Michael Portillo
+573	Other Con MP/Lord (anti-war)
+574	Conservative unnamed source (anti-war)
+575	Other Conservative supporter (anti-war)
+580	Charles Kennedy
+581	Menzies Campbell
+582	Other Lib Dem leadership
+583	Other Lib Dem MP/Lord
+584	Lib Dem unnamed source
+585	Other Lib Dem supporter
+590	Other Political Party MP/ supporter (not anti-war)
+591	Other Political Party MP/ supporter (anti-war)
+600	President Bush
+601	Colin Powell: Secretary of State
+602	Donald Rumsfeld: Defence Secretary
+603	Dick Cheney: Vice President
+604	Victoria Clarke
+605	Condoleezza Rice
+606	Karen Hughes
+607	White House named source
+608	White House unnamed source
+609	White House anonymous source
+610	White House leaked source
+611	DoD named source
+612	DoD unnamed source
+613	DoD anonymous source
+614	DoD leaked source
+615	State Dept named source
+616	State Dept unnamed source
+617	State Dept anonymous source
+618	State Dept leaked source
+619	Other US Government named source
+620	Other US Government unnamed source
+621	US diplomat
+622	George Bush snr.
+623	US intelligence sources
+630	Other Democrat politician (not anti-war)
+631	Other Republican politician (not anti-war)
+635	Other Democrat politician (anti-war)
+636	Other Republican politician (anti-war)
+640	Saddam Hussein
+641	Tariq Aziz (Deputy Prime Minister)
+642	Ali Hassan al-Majid (chemical Ali)
+643	Muhammad Said al-Sahaf (Information Minister)
+644	Naji Sabri (foreign minister) 
+645	Other Iraqi leadership
+646	Other Baath Party supporter
+647	General Rawi (Iraq)
+648	Other Iraq military spokesman
+649	Iraqi soldier
+650	Iraqi dissenting military voice
+651	Fedayeen/ militia
+652	Iraqi police/security
+653	Iraqi intelligence sources
+654	Iraqi Military intelligence sources
+655	Other Iraqi authorities named source
+656	Other Iraqi authorities unnamed source
+657	Iraqi leadership: US playing card reference
+658	Saddam's family
+659	Foreign militia supportive of Saddam
+660	Iraqi opposition leaders
+661	Ahmed Chalabi
+662	Grand Ayatollah Ali al-Sistani
+663	Other Iraqi Religious leader
+664	Kurdish representative
+665	Kurdish forces
+666	Other militia against Saddam
+667	Iraqi exile
+670	Coalition military: Tommy Franks
+671	US military spokesman: Frank Thorp
+672	Al Lockwood
+673	Major General McChrystal
+674	General Myers
+675	General Brooks
+676	Other US Military named source
+677	Other US Military unnamed source
+678	US Military anonymous source
+679	US Military leaked source
+680	US Military intelligence source
+681	US soldier(s)
+682	Jessica Lynch
+683	US dissenting military voice
+690	UK military spokesman: Air Marshall Brian Burridge
+691	Chief of Defence Staff: Admiral Sir Michael Boyce
+692	Other UK Military named source
+693	Other UK Military unnamed source
+694	UK Military anonymous source
+695	Other UK Military leaked source
+696	UK Military intelligence source
+697	UK soldier(s)
+698	UK dissenting military voice
+699	"Our Troops"
+700	Other coalition forces/ source (not Kurdish)
+701	Other private security forces
+702	Coalition military religious figure
+703	Coalition military medical worker
+710	UK Islamic leader
+711	Other Islamic Religious leader (not Iraq)
+720	Arch Bishop of Canterbury
+721	Pope John Paul II
+722	Other Non-Islamic Religious leader (not Iraq)
+730	UK Anti-war protester
+731	UK Anti-war spokesperson
+732	UK Voluntary human shield
+733	US Anti-war protester
+734	US Anti-war spokesperson
+735	US Voluntary human shield
+736	Coalition Anti-war protester
+737	Coalition Anti-war spokesperson
+738	Voluntary human shield Coalition
+739	Non-Coalition Anti-war protester
+740	Non-Coalition Anti-war spokesperson
+741	Voluntary human shield Non-Coalition
+750	UK Pro-war protester
+751	UK Pro-war spokesperson
+752	US Pro-war protester
+753	US Pro-war spokesperson
+760	Refugee interest group
+761	Humanitarian pressure group
+762	Geneva Convention
+763	Aid/NGO/ Red Cross worker
+764	NGO spokesperson
+765	Medical worker in Iraq
+766	Other pressure group
+770	Expert linked to Academic organisation
+771	Expert: Iraqi
+772	Analyst: retired military (paid advisor)
+773	Think tank
+774	Other expert/ unnamed experts/ analysts
+780	Kofi Annan
+781	Hans Blix  
+782	Iraq Survey Group/ weapons inspector
+783	The UN/ UN representative
+784	UN document/resolution
+790	Jose Maria Aznar: Spanish PM
+791	Other coalition political
+792	Israeli representative
+793	Unspecified Coalition allies
+800	EU representative/ organisation
+801	Jaques Chirac/ French rep
+802	Gerhard Schroeder/ German rep
+803	Vladimir Putin/ Russian rep
+804	Other world leaders
+805	Turkish politician/ representative/ parliament
+810	Gulf Co-operation Council/ Arab League
+811	Syrian representative
+812	Palestinian representative
+813	Saudi representative
+814	Iranian representative
+815	Kuwaiti representative
+816	Egyptian representative
+817	Jordanian representative
+818	Other Arab political representative
+820	Al Qaeda/ Osama bin Laden
+821	Other terrorist group
+830	Vox pops: UK
+831	UK soldier family member/friend
+832	UK Opinion poll: media source
+833	UK Opinion poll: other source
+834	"The UK Public"
+840	Vox pops: US
+841	US soldier family member/friend
+842	US opinion poll: media source
+843	US opinion poll: other source
+844	"The American People"
+845	"The US Public"
+846	Non UK/US/Iraq opinion poll: media source
+847	Non UK/US/Iraq opinion poll: other source
+848	"The International Public"
+849	International vox pops
+850	Iraqi civilian(s)
+851	Iraqi soldier family member/friend
+852	Iraq opinion poll: media source
+853	Iraq opinion poll: other source
+854	Ali Ismail Abbas
+855	Iraqi civilian: non-interview/chanting
+856	"The Iraqi People"
+860	Richard Sambrook/ BBC spokes/executive
+861	Steve Anderson/ ITV spokes/executive
+862	Own reporter (as initiator of story) 
+863	UK reporter from other media source
+864	UK media (not specific)
+865	UK unidentified media
+866	UK TV (general)
+867	BBC
+868	UK newspaper
+869	The Times
+870	UK radio
+871	Media personality
+872	Specific journalist (named but not 'personality')
+873	Embedded reporter
+874	Interlocutor (NB. For use in press briefings)
+880	US reporter from other media source
+881	US media (not specific)
+882	US unidentified media
+883	US TV (general)
+884	ABC
+885	CBS
+886	NBC
+887	CNN
+888	FOX
+889	US newspaper
+890	The New York Times
+891	The Washington Post
+892	US radio
+900	Freedom TV/coalition controlled media
+901	Iraqi State television/newspaper
+902	Arab reporter from other media source
+903	Al Jazeera
+904	Abu Dhabi
+905	Other Arab media (not specific reporter)
+906	Other foreign reporter
+907	International Media
+908	International unidentified Media
+909	Internet source
+910	Other media source: non-specific/ unclear
+920	TU representative anti-war
+921	TU representative pro-war
+922	Business representative anti-war
+923	Business representative pro-war
+924	Bill Clinton
+925	Other: celebrities anti-war
+926	Other: celebrities pro-war/not anti-war
+927	Other: God
+928	Other: Allah
+929	Other: "The International Community"
+998	Other: no clear attribution
+999	Other: no applicable code

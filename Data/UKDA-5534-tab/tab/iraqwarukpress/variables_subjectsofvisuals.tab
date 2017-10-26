@@ -1,0 +1,208 @@
+.	Main Category	Sub Category
+1	Battle	Live: air attack
+2	Battle	Not live: air attack
+3	Battle	Live footage: battlefield Baghdad: incoming fire
+4	Battle	Live footage: battlefield Baghdad: outgoing fire
+5	Battle	Live footage: battlefield Baghdad: mix of firing
+6	Battle	Live footage: Baghdad: no firing/ soldiers patrolling
+7	Battle	Not live/unclear: battlefield Baghdad: incoming fire
+8	Battle	Not live/unclear: battlefield Baghdad: outgoing fire
+9	Battle	Not live/unclear: battlefield Baghdad: mix of firing
+10	Battle	Not Live: Baghdad: no firing/ soldiers patrolling
+11	Battle	Live: battlefield Basra: incoming fire
+12	Battle	Live: battlefield Basra: outgoing fire
+13	Battle	Live: battlefield Basra: mix of firing
+14	Battle	Live: battlefield Basra: no firing/ soldiers patrolling
+15	Battle	Not live: battlefield Basra: incoming fire
+16	Battle	Not live: battlefield Basra: outgoing fire
+17	Battle	Not live: battlefield Basra: mix of firing
+18	Battle	Not live: Basra: no firing/ soldiers patrolling
+19	Battle	Live: battlefield desert: incoming fire
+20	Battle	Live: battlefield desert: outgoing fire
+21	Battle	Live: battlefield desert: mix of firing
+22	Battle	Live: battlefield desert: no firing/ soldiers patrolling
+23	Battle	Not live: battlefield desert: incoming fire
+24	Battle	Not live: battlefield desert: outgoing fire
+25	Battle	Not live: battlefield desert: mix of firing
+26	Battle	Not live: battlefield desert: no firing/ soldiers patrolling
+27	Battle	Live: battlefield other: incoming fire
+28	Battle	Live: battlefield other: outgoing fire
+29	Battle	Live: battlefield other: mix of firing
+30	Battle	Live: battlefield other: no firing/ soldiers patrolling
+31	Battle	Not live: battlefield other: incoming fire
+32	Battle	Not live: battlefield other: outgoing fire
+33	Battle	Not live: battlefield other: mix of firing
+34	Battle	Not live: battlefield other: no firing/ soldiers patrolling
+35	Battle	Live: Aircraft carrier/ship
+36	Battle	Not live: Aircraft carrier/ship
+37	Battle	Battlefield: bad weather/ no advance
+38	Battle	UK troops/ interview/daily life/focus
+39	Battle	US troops/ interview/daily life/focus
+40	Battle	Iraqi troops/ interview/daily life/focus
+41	Battle	Psych-ops (leaflet distribution/ radio broadcasts/cards)
+42	Battle	Guerrilla tactics/Fedayeen 
+43	Battle	Suicide bombing
+44	Battle	Car bomb
+45	Battle	Damage to infrastructure by Iraqis
+46	Battle	Damage to infrastructure by Coalition  
+47	Battle	Damage to media outlet by Iraqis
+48	Battle	Damage to media outlet by Coalition  
+49	Battle	Body armour/chemical protection: coalition soldiers wearing
+50	Battle	Body armour/chemical protection: Iraqi soldiers wearing
+51	Battle	Body armour/ chemical protection: lack of/ concern
+52	Battle	Dolphins or other animals for military purposes
+53	Battle	Airplanes/helicopters taking off/landing
+54	Battle	Site of missile attack/ post attack scenes
+55	Battle	Encounters between Iraqi troops and civilians
+56	Battle	Encounters between Coalition troops and civilians
+57	Battle	Soldiers searching property
+58	Battle	Downed aircraft
+59	Battle	Battle: other
+60	Battle/Weapons	Visuals focusing on precision bombing
+61	Battle/Weapons	Coalition footage/slides of bomb targets
+62	Battle/Weapons	Military hardware/ tanks
+63	Battle/Weapons	Weapons: other
+70	Strategy	Coalition civilian leader on military policy/ goals
+71	Strategy	Coalition military leader on military policy/ goals
+72	Strategy	Iraqi civilian leader on military policy/ goals
+73	Strategy	Iraqi military leader on military policy/ goals
+74	Strategy	Visuals/Maps used to demonstrate tactics (not weapons)
+75	Strategy	UK military leader as focus
+76	Strategy	US military leader as focus
+77	Strategy	Iraqi military leader as focus
+78	Strategy	Strategy: other
+90	Rationale/Historical	Library footage of WMDs
+91	Rationale/Historical	Library footage of past Gulf War/ other conflict
+92	Rationale/Historical	Library footage of past humanitarian crises
+93	Rationale/Historical	Torture chambers/ prisons
+94	Rationale/Historical	Weapons inspectors/ interview
+95	Rationale/Historical	Rationale/Historical: other
+110	Media	Reporter under fire
+111	Media	Own reporter as main subject
+112	Media	Other UK reporter/media as main subject
+113	Media	Other US reporter/media as main subject
+114	Media	Other Iraqi reporter/media as main subject
+115	Media	Arab reporter/media outlet as subject
+116	Media	Other world reporter/media outlet as subject
+117	Media	Internet
+118	Media	Media casualties
+119	Media	Media casualties: home footage/ mug shot/ still
+120	Media	Media: other
+130	POW	US POWs: close-up on individual
+131	POW	US POWs: shown as a group
+132	POW	UK POWs: close-up on individual
+133	POW	UK POWs: shown as a group
+134	POW	Iraqi POWs: close-up on individual
+135	POW	Iraqi POWs: shown as a group
+136	POW	POWs: other
+137	POW	POW/MIA: home footage/mug shot
+138	POW	Rescue of POWs
+140	Casualties	Civilian casualties: bodies faces not visible (coffins, body bags)
+141	Casualties	Civilian casualties: bodies, faces shown
+142	Casualties	Civilian casualties: Body, isolation on single individual, face shown
+143	Casualties	Civilian casualties: Wounded, faces not shown
+144	Casualties	Civilian casualties: Wounded, faces shown
+145	Casualties	Civilian: Wounded, isolation on single individual, face shown
+146	Casualties	Civilian: Person wounded or killed on camera, face not shown
+147	Casualties	Civilian: Person wounded or killed on camera, face shown
+148	Casualties	Civilian casualties: home footage/ mug shot/ still
+149	Casualties	Iraqi troop casualties: bodies faces not visible (coffins, body bags)
+150	Casualties	Iraqi troop casualties: bodies, faces shown
+151	Casualties	Iraqi troop casualties: Body, isolation on single individual, face shown
+152	Casualties	Iraqi troop casualties: Wounded, faces not shown
+153	Casualties	Iraqi troop casualties: Wounded, faces shown
+154	Casualties	Iraqi troop: Wounded, isolation on single individual, face shown
+155	Casualties	Iraqi troop: Person wounded or killed on camera, face not shown
+158	Casualties	UK casualties: bodies faces not visible (coffins, body bags)
+159	Casualties	UK casualties: bodies, faces shown
+160	Casualties	UK casualties: Body, isolation on single individual, face shown
+161	Casualties	UK casualties: Wounded, faces not shown
+162	Casualties	UK casualties: Wounded, faces shown
+163	Casualties	UK: Wounded, isolation on single individual, face shown
+164	Casualties	UK: Person wounded or killed on camera, face not shown
+165	Casualties	UK: Person wounded or killed on camera, face shown
+166	Casualties	UK casualties: home footage/ mug shot/ still
+167	Casualties	US/other coalition casualties: bodies faces not visible (coffins, body bags)
+168	Casualties	US/other casualties: bodies, faces shown
+169	Casualties	US/other casualties: Body, isolation on single individual, face shown
+170	Casualties	US/other casualties: Wounded, faces not shown
+171	Casualties	US/other casualties: Wounded, faces shown
+172	Casualties	US/other: Wounded, isolation on single individual, face shown
+173	Casualties	US/other: Person wounded or killed on camera, face not shown
+174	Casualties	US other: Person wounded or killed on camera, face shown
+175	Casualties	US casualties: home footage/ mug shot/ still
+176	Casualties	Mass graves/ desiccated remains
+177	Casualties	Grieving family/ hysteria, Iraq
+178	Casualties	Grieving family/ muted emotional response, Iraq
+179	Casualties	Grieving family/ hysteria, coalition
+180	Casualties	Grieving family/ muted emotional response, coalition
+181	Casualties	Hospital scenes
+182	Casualties	Casualties: other
+200	Protest	Anti-war protest in UK
+201	Protest	Anti-war protest in US
+202	Protest	Anti-war protest in Arab or Muslim countries
+203	Protest	Anti-war protest in other locale
+204	Protest	Voluntary human shield 
+205	Protest	Protest: other 
+230	Diplomacy	Summit/meeting of world leaders
+231	Diplomacy	UN meeting/ spokesman
+232	Diplomacy	Diplomacy: other
+240	Opinion/Graphics	Opinion polls
+241	Opinion/Graphics	Maps (media initiated, not military/ govt)
+242	Opinion/Graphics	Other graphics
+250	Religion	Iraqi religious leaders
+251	Religion	UK religious leaders - all faiths
+252	Religion	US religious leaders
+253	Religion	Other religious leaders
+254	Religion	Ceremonies 
+255	Religion	Religion: other 
+260	Reconstruction	Meeting of potential Iraqi leaders/ government
+261	Reconstruction	Repair to infrastructure
+262	Reconstruction	Restoration of law and order
+263	Reconstruction	Reconstruction: other
+270	Looting	Looting
+271	Looting	Crowd scenes/ social disorder (in Iraq)
+278	Domestic UK	UK Press conference
+279	Domestic US	US Press conference
+280	Domestic UK	Parliament debate
+281	Domestic UK	Other UK Labour politician
+282	Domestic UK	Other UK opposition politician
+283	Domestic UK	Other UK interest group (not anti-war protester)
+284	Domestic US	Debate in Congress/Senate
+285	Domestic US	Other US Republican politician
+286	Domestic US	Other US Democrat/opposition politician
+287	Domestic US	Other US interest group (not anti-war protester)
+288	Domestic Iraq	Other Iraqi leadership
+289	Domestic Iraq	Other Iraqi opposition leader
+290	Blair	BLAIR as main subject
+300	Bush	BUSH
+310	WMD	Soldiers searching/possible finds/evidence
+311	WMD	Soldiers searching/ evidence questionable/ frustration
+312	WMD	WMD: other
+320	Terrorism	Al Qaeda suspects/evidence of linkage
+321	Terrorism	Terrorism: other
+340	Family Life	UK soldier's family (not grieving/ with casualties)
+341	Family Life	US soldier's family
+342	Family Life	Iraqi soldier's family
+343	Family Life	Family life: other
+350	Saddam	SADDAM (profile)
+351	Saddam	Footage of address to Iraqi people
+352	Saddam	Possible sighting/question of authenticity/ use of doubles
+353	Saddam	Destruction/ mocking of image/statue
+354	Saddam	Image of Saddam celebrated
+355	Saddam	Saddam's riches/ palaces
+356	Saddam	Saddam's family
+360	Humanitarian	Aid reaching people
+361	Humanitarian	Aid not getting through/unable to deliver
+362	Humanitarian	Scarcity of food/water/electricity
+363	Humanitarian	Refugees, in crowds
+364	Humanitarian	Refugees, tight shots
+365	Humanitarian	Humanitarian: other
+370	Iraqi People	Jubilant scenes/crowds waving to troops
+371	Iraqi People	Hostile/ indifferent crowds
+372	Iraqi People	Daily life of Iraqi civilians
+400	Other	Other Middle Eastern country/ leader
+401	Other	Photo/video montage
+402	Other	Celebrities
+403	Other	Cartoon
+999	Other	Other/ no appropriate code

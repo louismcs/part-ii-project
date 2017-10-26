@@ -1,0 +1,358 @@
+Subject (What)	Main Category	Sub Category
+1	Battle	Ground combat/ ongoing battle/ military situation
+2	Battle	Air attack 
+3	Battle	Coalition aircraft losses
+4	Battle	Iraqi aircraft losses (relevant?)
+5	Battle	Coalition battle gains
+6	Battle	Coalition battle losses
+7	Battle	Iraqi battle gains
+8	Battle	Iraqi battle losses
+9	Battle	Death/ capture of Iraqi leadership (not Saddam)
+10	Battle	Coalition attack: general
+11	Battle	Coalition attack: effective
+12	Battle	Coalition attack: ineffective
+13	Battle	Coalition attack: delay/ bad weather
+14	Battle	Iraqi resistance: general
+15	Battle	Iraqi resistance: fierce/ effective
+16	Battle	Iraqi resistance: ineffective/ lack of/ surrender
+17	Battle	Coalition troops morale
+18	Battle	Iraqi troops morale
+19	Battle	Coalition troops expertise
+20	Battle	Iraqi troops expertise
+21	Battle	Coalition military intelligence
+22	Battle	Iraqi military intelligence
+23	Battle	Relations between coalition troops
+24	Battle	Relations between coalition and Iraqi troops
+25	Battle	Relations between Iraqi troops
+26	Battle	Daily life of UK troops/human interest
+27	Battle	Daily life of US troops/human interest
+28	Battle	Daily life of Iraqi troops/human interest
+29	Battle	Coalition: specialist equipment/body armour, chemical suits
+30	Battle	Iraqis: specialist equipment/body armour, chemical suits
+31	Battle	Destruction of homes attributed to coalition
+32	Battle	Destruction of homes attributed to Iraqi military
+33	Battle	Destruction of homes attributed to non-regular forces
+34	Battle	Destruction of infrastructure attributed to coalition
+35	Battle	Destruction of infrastructure attributed to Iraqi military
+36	Battle	Destruction of infrastructure attributed to non-regular forces
+37	Battle	Burning oil fields
+38	Battle	Protection of oil fields/ ministry
+39	Battle	Removal of mines
+40	Battle	Delay: danger of mines
+41	Battle	Dolphins or other animals for military purposes
+42	Battle	Encounters with civilians: Iraqi troops
+43	Battle	Encounters with civilians: coalition troops (UK/US)
+44	Battle	Iraqi troop movements
+45	Battle	Coalition troop movements
+46	Battle	Logistics/ supplies
+47	Battle	Post attack/ devastation (emergency workers)
+48	Battle	Collapse of regime
+49	Battle	War crimes
+50	Battle	Length of war
+51	Battle	Other: battle: no appropriate code
+60	Battle/Weapons	Military technology: air: precision
+61	Battle/Weapons	Military technology: air: non-precision
+62	Battle/Weapons	Military technology: ground: precision
+63	Battle/Weapons	Military technology: ground: non-precision
+64	Battle/Weapons	Weapons/technology: other/general
+70	Battle/ Tactics	Suicide bomb/ attacks 
+71	Battle/ Tactics	Car bomb
+72	Battle/ Tactics	Psych-ops Coalition (leaflets/radio broadcasts)
+73	Battle/ Tactics	Psych-ops Coalition: playing cards
+74	Battle/ Tactics	Psych-ops Iraqi
+75	Battle/ Tactics	Attack on media outlet attributed to coalition
+76	Battle/ Tactics	Attack on media outlet attributed to Iraqi military
+77	Battle/ Tactics	Attack on media outlet attributed to non-regular forces
+78	Battle/ Tactics	Depleted Uranium
+79	Battle/ Tactics	Cluster bombs
+80	Battle/ Tactics	Use of human shields/ citizens by Iraq authorities
+81	Battle/ Tactics	Guerrilla tactics
+82	Battle/ Tactics	Other Iraqi non-conventional/dubious tactics
+83	Battle/ Tactics	Other Coalition non-conventional/dubious tactics
+84	Battle/ Tactics	Distinction made between UK and US military methods
+85	Battle/ Tactics	Battle/ Tactics: other/general
+90	Strategy	Deadlines for action/war
+91	Strategy	Distinction made between UK and US strategy
+92	Strategy	Distinction made between UK and US goals
+93	Strategy	Unification/synchronisation of coalition strategy
+94	Strategy	Description of 'Shock and Awe' (explicit mention)
+95	Strategy	Evaluation of 'Shock and Awe'
+96	Strategy	Description of Coalition military strategy
+97	Strategy	Description of Coalition military goals
+98	Strategy	Description of UK military strategy
+99	Strategy	Description of UK military goals
+100	Strategy	Description of US military strategy
+101	Strategy	Description of US military goals
+102	Strategy	Description of Iraqi military strategy
+103	Strategy	Description of Iraqi military goals
+104	Strategy	Success of Coalition military strategy
+105	Strategy	Failure of Coalition military strategy
+106	Strategy	Success of Coalition military goals
+107	Strategy	Failure of Coalition military goals
+108	Strategy	Success of UK military strategy
+109	Strategy	Failure of UK military strategy
+110	Strategy	Success of UK military goals
+111	Strategy	Failure of UK military goals
+112	Strategy	Success of US military strategy
+113	Strategy	Failure of US military strategy
+114	Strategy	Success of US military goals
+115	Strategy	Failure of US military goals
+116	Strategy	Success of Iraqi military strategy
+117	Strategy	Failure of Iraqi military strategy
+118	Strategy	Success of Iraqi military goals
+119	Strategy	Failure of Iraqi military goals
+120	Strategy	Evaluation of coalition strategy, ground and general
+121	Strategy	Evaluation of coalition air attack
+122	Strategy	Evaluation of Iraqi strategy, ground and general
+123	Strategy	Evaluation of Iraqi air attack (relevant?)
+124	Strategy	Deployment of troops/ sufficient numbers
+125	Strategy	Strategy: other/general
+130	Rationale	Rationale: humanitarian general
+131	Rationale	Regime change: Humanitarian argument for change
+132	Rationale	Regime change: war will worsen situation
+133	Rationale	Rationale: WMDs general
+134	Rationale	WMD as justification/ threat to UK/ 45 mins
+135	Rationale	WMD threat does not exist
+136	Rationale	Rationale: Legal argument general/ UN 
+137	Rationale	Legal basis: Iraq's failure to comply with UN resolutions
+138	Rationale	Legal basis: no UN or legal mandate
+139	Rationale	Rationale: Coalition self interest general
+140	Rationale	Self Interest/ imperialist aims UK
+141	Rationale	Self Interest/ imperialist aims US
+142	Rationale	Rationale: oil rights general
+143	Rationale	Oil rights as reason for war
+144	Rationale	Oil in trust fund for Iraqi people
+145	Rationale	Rationale: regional stability general
+146	Rationale	Regional stability as outcome of war
+147	Rationale	Regional instability as outcome of war
+148	Rationale	Rationale: other/general
+160	Media	Embedded reporter(s) as subject
+163	Media	UK media strategy (spin, briefings)
+164	Media	US media strategy
+165	Media	Coalition media strategy
+166	Media	Iraqi media strategy
+167	Media	Media technology
+168	Media	Internet
+169	Media	Censorship by Iraqi leadership
+170	Media	Censorship by coalition
+171	Media	Inaccuracy of media report
+172	Media	UK media coverage
+173	Media	US media coverage
+174	Media	Arab media coverage
+175	Media	Iraqi media coverage
+176	Media	About other international coverage
+177	Media	24/7 media coverage - mechanisms
+178	Media	24/7 media coverage: effects on perceptions of events
+179	Media	24/7 media coverage: effects on perception of length of war
+180	Media	Media story
+181	Media	Government's sensitivity to media coverage
+182	Media	Media casualties, no attribution of responsibility
+183	Media	Media casualties, responsibility of coalition
+184	Media	Media casualties, responsibility of Iraqi military
+185	Media	Media casualties, responsibility of non-regular forces
+186	Media	Media: other/general
+187	Media	Media support/campaign for troops
+190	POW	Prisoners of war/ MIA: coalition
+191	POW	Prisoners of war/ MIA: Iraqi
+192	POW	Kidnapping/ murder of civilians
+193	POW	Kidnapping/ murder of coalition military
+194	POW	Kidnapping/ murder of Iraqi military
+195	POW	Torture or abuse: coalition POWs
+196	POW	Torture or abuse: Iraqi POWs
+197	POW	Torture or abuse: civilians
+198	POW	POWs/ MIAs: other/general
+200	Casualties	Overall Body Count/ or as an issue
+201	Casualties	UK military casualties, no attribution of responsibility
+202	Casualties	UK military casualties, responsibility of coalition
+203	Casualties	UK military casualties, responsibility of Iraqi military
+204	Casualties	UK military casualties, responsibility of non-regular forces
+205	Casualties	UK military casualties: personalization/obituary
+206	Casualties	UK military casualties: statistical information only
+207	Casualties	UK military casualties: family reaction supportive of war
+208	Casualties	UK military casualties: family reaction critical of war
+209	Casualties	US military casualties, no attribution of responsibility
+210	Casualties	US military casualties, responsibility of coalition
+211	Casualties	US military casualties, responsibility of Iraqi military
+212	Casualties	US military casualties, responsibility of non-regular forces
+213	Casualties	US military casualties: personalization/obituary
+214	Casualties	US military casualties: statistical information only
+215	Casualties	US military casualties: family reaction supportive of war
+216	Casualties	US military casualties: family reaction critical of war
+217	Casualties	Iraqi military casualties, no attribution of responsibility
+218	Casualties	Iraqi military casualties, responsibility of coalition
+219	Casualties	Iraqi military casualties, responsibility of Iraqi military
+220	Casualties	Iraqi military casualties, responsibility of non-regular forces
+221	Casualties	Iraqi military casualties: personalization/obituary
+222	Casualties	Iraqi military casualties: statistical information only
+223	Casualties	Iraqi military casualties: family reaction supportive of war
+224	Casualties	Iraqi military casualties: family reaction critical of war
+225	Casualties	Civilian casualties, no attribution of responsibility
+226	Casualties	Civilian casualties, responsibility of coalition
+227	Casualties	Civilian casualties, responsibility of Iraqi military
+228	Casualties	Civilian casualties, responsibility of non-regular forces
+229	Casualties	Civilian casualties: accidental
+230	Casualties	Other casualties: non-Iraqi, international
+231	Casualties	Casualties: Coalition claims/ estimates/ rebuttal
+232	Casualties	Casualties: Iraqi claims/ estimates/ rebuttal
+233	Casualties	Friendly fire/ blue on blue
+234	Casualties	Casualties: other/general
+240	Protest	Antiwar movement as an issue: UK
+241	Protest	Antiwar activity: within legislature: UK
+242	Protest	Antiwar activity: within executive: UK
+243	Protest	Antiwar activity: peaceful demonstration: UK
+244	Protest	Antiwar activity: violent demonstration: UK
+245	Protest	Antiwar activity: individual demonstration: UK
+246	Protest	Antiwar activity: voluntary human shields: UK
+247	Protest	Antiwar activity: in UK military
+248	Protest	Police tactics vis-à-vis antiwar movement: UK
+249	Protest	Counter protests: UK
+250	Protest	Balance between antiwar and counter protests: UK
+251	Protest	Antiwar movement as an issue: US
+252	Protest	Antiwar activity: within legislature: US
+253	Protest	Antiwar activity: within executive: US
+254	Protest	Antiwar activity: peaceful demonstration: US
+255	Protest	Antiwar activity: violent demonstration: US
+256	Protest	Antiwar activity: individual demonstration: US
+257	Protest	Antiwar activity: voluntary human shields: US
+258	Protest	Antiwar activity: in US military
+259	Protest	Police tactics vis-à-vis antiwar movement: US
+260	Protest	Counter protests: US
+261	Protest	Balance between antiwar and counter protests: US
+262	Protest	Antiwar protest in Europe
+263	Protest	Antiwar protest in Iraq
+264	Protest	Antiwar protest in other Arab or Muslim countries
+265	Protest	Antiwar protest: other
+266	Protest	Pro-war rally/demonstration
+267	Protest	Protests: other/general
+270	Diplomacy	Summit of world leaders
+271	Diplomacy	Peace initiative: war seen as failure of negotiations/diplomacy
+272	Diplomacy	Peace initiative: peaceful settlement with Iraq impossible
+273	Diplomacy	Impact on UK/Europe relations
+274	Diplomacy	Impact on US/ Europe relations
+275	Diplomacy	Impact on US/ UK relations
+276	Diplomacy	Tensions within coalition
+277	Diplomacy	International Relations general
+278	Diplomacy	UK foreign policy - Europe
+279	Diplomacy	UK foreign policy - Middle East
+280	Diplomacy	UK foreign policy - Other
+281	Diplomacy	US foreign policy - Europe
+282	Diplomacy	US foreign policy - Middle East
+283	Diplomacy	US foreign policy - Other
+284	Diplomacy	EU skepticism/ opposition to military intervention
+285	Diplomacy	Middle East: Israel/Palestine tension
+286	Diplomacy	World Security
+287	Diplomacy	Regional political stability
+288	Diplomacy	International law
+289	Diplomacy	Iraq territorial integrity
+290	Diplomacy	International support for military action
+291	Diplomacy	International disagreements about military action
+292	Diplomacy	Diplomacy: other/general
+300	Public opinion	Public opinion: UK
+301	Public opinion	Public opinion: US
+302	Public opinion	Public opinion: international
+303	Public opinion	'Islamophobia'
+304	Public opinion	Public opinion: other/general
+310	Religion	Religion and the war: Islam vs. Christianity as issue
+311	Religion	Religion and the war: Islam not the enemy, religiosity downplayed
+312	Religion	Religion and the war: other/general
+320	Reconstruction/Future	Cost of reconstruction
+321	Reconstruction/Future	Strategy for reconstruction general
+322	Reconstruction/Future	Role of businesses/ commercial operation
+323	Reconstruction/Future	Coalition's length of stay in Iraq
+324	Reconstruction/Future	Representative democracy in Iraq/ post-war governance
+325	Reconstruction/Future	UN role in reconstruction
+326	Reconstruction/Future	Peace (the challenge)
+327	Reconstruction/Future	Iraqi exiles' role in reconstruction
+328	Reconstruction/Future	Future developments of operations
+329	Reconstruction/Future	Future conflicts
+330	Reconstruction/Future	Reconstruction/future: other/general
+340	Law and (dis)order	Restoration of law and order: coalition effective
+341	Law and (dis)order	Restoration of law and order: coalition ineffective
+342	Law and (dis)order	Restoration of law and order: coalition attempts
+343	Law and (dis)order	Restoration of law and order: Iraqi police effective
+344	Law and (dis)order	Restoration of law and order: Iraqi police ineffective
+345	Law and (dis)order	Ethnic violence
+346	Law and (dis)order	Looting
+347	Law and (dis)order	Civil unrest/ disorder
+348	Law and (dis)order	Law and (dis)order: other/general
+350	Domestic	Debate in Parliament/ domestic policy matters
+351	Domestic	UK domestic politics
+352	Domestic	Debate in Congress/ Senate
+353	Domestic	US domestic politics
+354	Domestic	Cost of war
+355	Domestic	Domestic: other/general
+356	Domestic	Support for coalition troops (not media/families of casualties)
+357	Domestic	Support for Iraqi troops
+360	Blair	Blair: focus on
+370	Bush	Bush: focus on
+380	WMD	WMD: speculation/ will be found
+381	WMD	WMD: evidence found/ positive developments
+382	WMD	WMD: not found yet
+383	WMD	WMD: not likely to find/ negative developments
+384	WMD	Threat of chemical/ biological warfare in Iraq: assumed
+385	WMD	Threat of chemical/ biological warfare in Iraq: questioned
+386	WMD	WMDs: other/general
+390	Terrorism	Terrorism: Iraq's links to Al Qaeda
+391	Terrorism	Terrorism: No evidence of links to Al Qaeda
+392	Terrorism	War on Terror: war will prevent future attacks (inc on US/UK)
+393	Terrorism	War on Terror: war will encourage future attacks (inc on US/UK)
+394	Terrorism	War on Terror: general/other
+395	Terrorism	Terrorism: in other Middle East country
+396	Terrorism	Terrorism: Other/general
+400	Historical	Brutality of regime/ past atrocities
+401	Historical	Demonisation of Saddam
+402	Historical	Sanctions as humanitarian disaster: West to blame
+403	Historical	Sanctions/ Oil for Food effectiveness hampered by Saddam
+404	Historical	Western involvement in supplying WMD materials
+405	Historical	Comparison/reference to 1991 Gulf war 
+406	Historical	Previous uprisings by Iraqi people
+407	Historical	Comparison to past conflict (Vietnam/ WW2/Afghanistan)
+408	Historical	9/11 reference
+409	Historical	Iraqi support for Palestinians
+410	Historical	Western/ US support for Israel
+411	Historical	Historical: other/general
+420	Family Life	Families of UK soldiers
+421	Family Life	Families of US soldiers
+422	Family Life	Families of Iraqi soldiers
+423	Family Life	Soldiers' Families: Other/general
+430	Saddam	Death of Saddam/ speculation on whereabouts
+431	Saddam	Destruction/ defacing/ mocking of image/statue
+432	Saddam	Celebration of image
+433	Saddam	Saddam's family/ fleeing the country
+434	Saddam	Saddam's millions/ decadence
+435	Saddam	Saddam: other/general/focus
+440	Humanitarian	Success of/funds for coalition/UN aid delivery to Iraqi people
+441	Humanitarian	Failure of/lack of funds for coalition/UN aid delivery to Iraqi people
+442	Humanitarian	Coalition/UN attempts to deliver aid 
+443	Humanitarian	Non-coalition/NGO aid delivery to Iraqi people
+444	Humanitarian	Hospitals: shortage of medicine supplies, treatment
+445	Humanitarian	Hospitals: adequate medicine supplies, treatment
+446	Humanitarian	Water/food shortage
+447	Humanitarian	Water/food supplies adequate
+448	Humanitarian	Humanitarian consequences of war: general
+449	Humanitarian	Humanitarian consequences of war: positive
+450	Humanitarian	Humanitarian consequences of war: negative
+451	Humanitarian	Refugees
+452	Humanitarian	Geneva Convention
+453	Humanitarian	Humanitarian: other/general
+460	Iraqi People	Celebration in Iraq (pro-coalition)
+461	Iraqi People	Hostility/ civil unrest in Iraq (anti-coalition)
+462	Iraqi People	Loyalty to Saddam portrayed as genuine
+463	Iraqi People	Loyalty to Saddam portrayed as not genuine / fearful
+464	Iraqi People	Wariness toward coalition/ feelings of betrayal
+465	Iraqi People	Welcoming to coalition/ troops
+466	Iraqi People	Human interest: Iraqi civilian profile/ daily life
+467	Iraqi People	Hostility/ civil unrest/ uprising in Iraq (not anti-coalition)
+468	Iraqi People	Co-operation with Coalition
+469	Iraqi People	Iraqi people: other/general
+480	Other	Environmental disaster
+483	Other	Reaction to war in other neighboring/ Mid East country (not public opinion)
+484	Other	Reaction to war in other locale
+485	Other	Human interest: other
+486	Other	Price of oil
+487	Other	UK stock market
+488	Other	US stock market
+489	Other	Question/comment by interlocutor (for press briefings only)
+490	Other	Own statement (for press briefings only)
+491	Other	Statement by other (for press briefings only)
+999	Other	Other: no appropriate code

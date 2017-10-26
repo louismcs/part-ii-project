@@ -1,0 +1,76 @@
+.	Event initiator
+50	Police: unplanned
+51	Iraqi civilians: planned
+52	Iraqi civilians: unplanned
+53	UK media: planned
+54	UK media: unplanned
+55	US media: planned
+56	US media: unplanned
+57	Iraqi media: planned
+58	Iraqi media: unplanned
+59	Arab media: planned
+60	Arab media: unplanned
+61	Internet: planned
+62	Internet: unplanned
+63	Other World Reporter: planned
+64	Other World Reporter: unplanned
+65	Family of coalition soldier: planned
+66	Family of coalition soldier: unplanned
+67	Family of Iraqi soldier: planned
+68	Family of Iraqi soldier: unplanned
+69	Aid agency/ NGO: planned
+70	Aid agency/ NGO: unplanned
+71	Coalition general: planned
+72	Coalition general: unplanned
+73	Opinion Poll
+74	No clear initiator
+75	Other/ no code
+04	UK Military: unplanned
+05	Iraqi Military: planned
+06	Iraqi Military: unplanned
+07	Other Military: planned
+08	Other Military: unplanned
+09	USA political officials: planned
+10	USA political officials: unplanned
+11	UK political officials: planned
+12	UK political officials: unplanned
+13	Iraqi political officials: planned
+14	Iraqi political officials: unplanned
+15	Other official: UN: planned
+16	Other official: UN: unplanned
+17	Other official: European leader: planned
+18	Other official: European leader: unplann
+19	Other official: Middle East: planned
+20	Other official: Middle East: unplanned
+01	US Military: planned
+02	US Military: unplanned
+03	UK Military: planned
+21	Coalition soldiers/ Front line: planned
+22	Coalition soldiers/ Front line: unplanne
+23	Iraqi soldiers/ Front line: planned
+24	Iraqi soldiers/ Front line: unplanned
+25	Terrorist/ non-regular forces: planned
+26	Terrorist/ non-regular forces: unplanned
+27	Analysts/ Experts: planned
+28	Analysts/ Experts: unplanned
+29	Muslim community: UK or US: planned
+30	Muslim community: UK or US: unplanned
+31	Muslim community: other locale: planned
+32	Muslim community: other locale: unplanne
+33	Think Tank: planned
+34	Think Tank: unplanned
+35	Religious leader: planned
+36	Religious leader: unplanned
+37	Protesters: antiwar UK: planned
+38	Protesters: antiwar UK: unplanned
+39	Protesters: antiwar US: planned
+40	Protesters: antiwar US: unplanned
+41	Protesters: antiwar other: planned
+42	Protesters: antiwar other: unplanned
+43	Protesters: pro-war UK: planned
+44	Protesters: pro-war UK: unplanned
+45	Protesters: pro-war US: planned
+46	Protesters: pro-war US: unplanned
+47	Protesters: pro-war other: planned
+48	Protesters: pro-war other: unplanned
+49	Police: planned

@@ -1,0 +1,51 @@
+.	Tone
+01	Straight UK
+02	Straight US
+03	Straight IRAQ
+04	Straight UN
+05	Straight ANTIWAR
+06	Straight ARAB LEAGUE
+07	Straight OTHER
+08	Straight COALITION
+09	Heavily deflating-UK
+10	Heavily deflating-US
+11	Heavily deflating-IRAQ
+12	Heavily deflating-UN
+13	Heavily deflating-ANTI WAR
+14	Heavily deflating-ARAB LEAGUE
+15	Heavily deflating-OTHER
+16	Heavily deflating-COALITION
+17	Deflating-UK
+18	Deflating-US
+19	Deflating-IRAQ
+20	Deflating-UN
+21	Deflating-ANTI WAR
+22	Deflating-ARAB LEAGUE
+23	Deflating-OTHER
+24	Deflating-COALITION
+25	Evaluative / Mixed UK
+26	Evaluative / Mixed US
+27	Evaluative / Mixed IRAQ
+28	Evaluative / Mixed UN
+29	Evaluative / Mixed ANTIWAR
+30	Evaluative / Mixed ARAB LEAGUE
+31	Evaluative / Mixed OTHER
+32	Evaluative / Mixed COALITION
+33	Reinforcing UK
+34	Reinforcing US
+35	Reinforcing IRAQ
+36	Reinforcing UN
+37	Reinforcing ANTI WAR
+38	Reinforcing ARAB LEAGUE
+39	Reinforcing OTHER
+40	Reinforcing COALITION
+41	Heavily reinforcing UK
+42	Heavily reinforcing US
+43	Heavily reinforcing IRAQ
+44	Heavily reinforcing UN
+45	Heavily reinforcing ANTI WAR
+46	Heavily reinforcing ARAB LEAGUE
+47	Heavily reinforcing OTHER
+48	Heavily reinforcing COALITION
+98	Can't determine
+99	Not applicable

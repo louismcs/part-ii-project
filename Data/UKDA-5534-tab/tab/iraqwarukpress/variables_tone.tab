@@ -1,0 +1,51 @@
+.	Tone
+01	Straight UK
+02	Straight US
+03	Straight IRAQ
+04	Straight UN
+05	Straight ANTIWAR
+06	Straight ARAB LEAGUE
+07	Straight OTHER
+08	Straight COALITION
+09	Heavily anti-UK
+10	Heavily anti-US
+11	Heavily anti-IRAQ
+12	Heavily anti-UN
+13	Heavily anti-ANTI WAR
+14	Heavily anti-ARAB LEAGUE
+15	Heavily anti-OTHER
+16	Heavily anti-COALITION
+17	Somewhat anti-UK
+18	Somewhat anti-US
+19	Somewhat anti-IRAQ
+20	Somewhat anti-UN
+21	Somewhat anti-ANTI WAR
+22	Somewhat anti-ARAB LEAGUE
+23	Somewhat anti-OTHER
+24	Somewhat anti-COALITION
+25	Mixed UK
+26	Mixed US
+27	Mixed IRAQ
+28	Mixed UN
+29	Mixed ANTIWAR
+30	Mixed ARAB LEAGUE
+31	Mixed OTHER
+32	Mixed COALITION
+33	Somewhat pro-UK
+34	Somewhat pro-US
+35	Somewhat pro-IRAQ
+36	Somewhat pro-UN
+37	Somewhat pro-ANTI WAR
+38	Somewhat pro-ARAB LEAGUE
+39	Somewhat pro-OTHER
+40	Somewhat pro-COALITION
+42	Heavily pro-US
+41	Heavily pro-UK
+43	Heavily pro-IRAQ
+44	Heavily pro-UN
+45	Heavily pro-ANTI WAR
+46	Heavily pro-ARAB LEAGUE
+47	Heavily pro-OTHER
+48	Heavily pro-COALITION
+98	Can't determine
+99	Not applicable
