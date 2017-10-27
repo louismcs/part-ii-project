@@ -24,6 +24,9 @@ def add_quote(blockquote, debate_url):
         quote = ""
         for paragraph in paragraphs:
             quote += get_paragraph_text(str(paragraph)) + "\n"
+        output_file = open("Data/output.txt", "a")
+        output_file.write(quote)
+        output_file.close
     except TypeError:
         print('Cannot parse quote')
 
