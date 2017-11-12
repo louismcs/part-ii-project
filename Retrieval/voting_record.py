@@ -9,7 +9,7 @@ import requests
 from helper import date_range
 
 
-DB_PATH = 'Data/Corpus/db_test19.db'
+DB_PATH = 'Data/Corpus/db_test21.db'
 
 
 def generate_csv(table):
@@ -210,6 +210,7 @@ def run():
     end_date = date(2003, 3, 19)
     for day in date_range(start_date, end_date):
         division_inserts(day)
+
     fill_member_and_vote_tables()
     generate_divisions_csv()
     generate_members_csv()
