@@ -46,13 +46,20 @@ def fill_mp_table():
                 conn.commit()
             except sqlite3.OperationalError:
                 print('FAILED: {} - {} - {} - {}'.format(mp_id, firstname, surname, party))
-    conn.close
+    conn.close()
     add_mp_votes()
 
 def run():
     """Runs the program"""
-    setup_mp_table()
-    fill_mp_table()
+    ''' setup_mp_table()
+    fill_mp_table() '''
+    conn = sqlite3.connect('Data/Corpus/corpus5.db')
+    cursor = conn.execute("SELECT SURNAME,PARTY,VOTE1,VOTE2 from MP")
+    count = 0
+    for row in cursor:
+        print('{}: {} - {} - {} - {}'.format(count, row[0], row[1], row[2], row[3]))
+        count += 1
+
     ''' Check if it stops after the same number of columns '''
 
 run()

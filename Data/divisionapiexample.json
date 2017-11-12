@@ -1,0 +1,22 @@
+{
+  "format": "linked-data-api",
+  "version": "0.2",
+  "result": {
+    "items": [
+      {
+        "_about": "http://data.parliament.uk/resources/102564",
+        "title": "Iraq",
+      },
+      {
+        "_about": "http://data.parliament.uk/resources/102565",
+        "date": {
+          "_value": "2003-03-18",
+          "_datatype": "dateTime"
+        },
+        "title": "Iraq",
+        "uin": "CD:2003-03-18:118"
+      }
+    ],
+    "totalResults": 2,
+  }
+}

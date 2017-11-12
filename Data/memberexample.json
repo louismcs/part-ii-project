@@ -1,0 +1,48 @@
+{
+   "format":"linked-data-api",
+   "version":"0.2",
+   "result":{
+      "_about":"http://lda.data.parliament.uk/members/172.json",
+      "definition":"http://lda.data.parliament.uk/meta/members/_id.json",
+      "extendedMetadataVersion":"http://lda.data.parliament.uk/members/172.json?_metadata=all",
+      "primaryTopic":{
+         "_about":"http://data.parliament.uk/members/172",
+         "additionalName":{
+            "_value":"Julie"
+         },
+         "constituency":{
+            "_about":"http://data.parliament.uk/resources/146966",
+            "label":{
+               "_value":"Hackney North and Stoke Newington"
+            }
+         },
+         "familyName":{
+            "_value":"Abbott"
+         },
+         "fullName":{
+            "_value":"Ms Diane Abbott"
+         },
+         "gender":{
+            "_value":"Female"
+         },
+         "givenName":{
+            "_value":"Diane"
+         },
+         "homePage":"http://www.dianeabbott.org.uk",
+         "isPrimaryTopicOf":"http://lda.data.parliament.uk/members/172.json",
+         "label":{
+            "_value":"Biography information for Ms Diane Abbott"
+         },
+         "party":{
+            "_value":"Labour"
+         },
+         "twitter":{
+            "_value":"https://twitter.com/HackneyAbbott"
+         }
+      },
+      "type":[
+         "http://purl.org/linked-data/api/vocab#ItemEndpoint",
+         "http://purl.org/linked-data/api/vocab#Page"
+      ]
+   }
+}
