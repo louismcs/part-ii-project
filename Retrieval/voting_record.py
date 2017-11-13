@@ -1,41 +1,11 @@
 """ Creates a database of MPs and their votes """
 
 
-import csv
+import json
 import sqlite3
-from datetime import date
 import requests
-from helper import date_range
-
-
-DB_PATH = 'Data/Corpus/db_test23.db'
-
-
-def generate_csv(table):
-    """ Outputs a csv for the given table """
-    conn = sqlite3.connect(DB_PATH)
-    curs = conn.cursor()
-    data = curs.execute("SELECT * FROM " + table)
-    filename = table.lower() + '.csv'
-    csv_file = open(filename, 'w', newline="")
-    writer = csv.writer(csv_file, delimiter=';')
-    writer.writerows(data)
-    csv_file.close()
-
-
-def generate_divisions_csv():
-    """ Generates a csv of the contents of the divisions table """
-    generate_csv('DIVISION')
-
-
-def generate_members_csv():
-    """ Generates a csv of the contents of the members table """
-    generate_csv('MEMBER')
-
-
-def generate_votes_csv():
-    """ Generates a csv of the contents of the votes table """
-    generate_csv('VOTE')
+from helper import (date_range, DB_PATH, generate_divisions_csv, generate_members_csv,
+                    generate_votes_csv, START_DATE, END_DATE)
 
 
 def create_tables():
@@ -68,7 +38,31 @@ def create_tables():
              FOREIGN KEY(DIVISION_ID) REFERENCES DIVISION(ID));''')
     conn.commit()
 
+    curs.execute('''CREATE TABLE DEBATE
+            (URL     TEXT   PRIMARY KEY   NOT NULL,
+             DATE    TEXT,
+             TITLE   TEXT);''')
+    conn.commit()
+
+    curs.execute('''CREATE TABLE SPEECH
+            (DEBATE_URL   TEXT,
+             MEMBER_ID    TEXT,
+             QUOTE        TEXT,
+             FOREIGN KEY(DEBATE_URL) REFERENCES DEBATE(URL),
+             FOREIGN KEY(MEMBER_ID)   REFERENCES MEMBER(ID));''')
+    conn.commit()
+
     conn.close()
+
+
+def insert_division(conn, curs, division_id, division_date, title):
+    """ Inserts a debate into the database given its data """
+    try:
+        curs.execute("INSERT INTO DIVISION (ID, DATE, TITLE) VALUES (?, ?, ?)",
+                     (division_id, division_date, title))
+        conn.commit()
+    except sqlite3.OperationalError:
+        print('FAILED DIVISION INSERT: {} - {} - {}'.format(division_id, division_date, title))
 
 
 def get_division_id(about):
@@ -83,20 +77,17 @@ def division_inserts(day):
            + division_date \
            + '&exists-date=true&_view=Commons+Divisions&_pageSize=500&_page=0'
     with requests.Session() as session:
-        obj = session.get(url).json()
+        try:
+            obj = session.get(url).json()
+        except json.decoder.JSONDecodeError:
+            print('JSON ERROR. URL: {}'.format(url))
         divisions = obj['result']['items']
         conn = sqlite3.connect(DB_PATH)
         curs = conn.cursor()
         for division in divisions:
             division_id = get_division_id(division['_about'])
             title = division['title']
-            try:
-                curs.execute("INSERT INTO DIVISION (ID, DATE, TITLE) VALUES (?, ?, ?)",
-                             (division_id, division_date, title))
-                conn.commit()
-            except sqlite3.OperationalError:
-                print('FAILED DIVISION INSERT: {} - {} - {}'.format(division_id, division_date,
-                                                                    title))
+            insert_division(conn, curs, division_id, division_date, title)
         conn.close()
 
 
@@ -212,18 +203,14 @@ def fill_member_and_vote_tables():
     conn.close()
 
 
-def run():
+def get_voting_record():
     """ Creates the database and fills it """
     create_tables()
-    start_date = date(2001, 9, 11)
-    end_date = date(2003, 3, 19)
-    for day in date_range(start_date, end_date):
+
+    for day in date_range(START_DATE, END_DATE):
         division_inserts(day)
 
     fill_member_and_vote_tables()
     generate_divisions_csv()
     generate_members_csv()
     generate_votes_csv()
-
-
-run()
