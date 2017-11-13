@@ -1,7 +1,6 @@
 """ Creates a database of MPs and their votes """
 
 
-import json
 import csv
 import sqlite3
 from datetime import date
@@ -9,7 +8,7 @@ import requests
 from helper import date_range
 
 
-DB_PATH = 'Data/Corpus/db_test21.db'
+DB_PATH = 'Data/Corpus/db_test23.db'
 
 
 def generate_csv(table):
@@ -83,21 +82,22 @@ def division_inserts(day):
     url = 'http://lda.data.parliament.uk/commonsdivisions.json?date=' \
            + division_date \
            + '&exists-date=true&_view=Commons+Divisions&_pageSize=500&_page=0'
-    res = requests.get(url)
-    obj = json.loads(res.text)
-    divisions = obj['result']['items']
-    conn = sqlite3.connect(DB_PATH)
-    curs = conn.cursor()
-    for division in divisions:
-        division_id = get_division_id(division['_about'])
-        title = division['title']
-        try:
-            curs.execute("INSERT INTO DIVISION (ID, DATE, TITLE) VALUES (?, ?, ?)",
-                         (division_id, division_date, title))
-            conn.commit()
-        except sqlite3.OperationalError:
-            print('FAILED DIVISION INSERT: {} - {} - {}'.format(division_id, division_date, title))
-    conn.close()
+    with requests.Session() as session:
+        obj = session.get(url).json()
+        divisions = obj['result']['items']
+        conn = sqlite3.connect(DB_PATH)
+        curs = conn.cursor()
+        for division in divisions:
+            division_id = get_division_id(division['_about'])
+            title = division['title']
+            try:
+                curs.execute("INSERT INTO DIVISION (ID, DATE, TITLE) VALUES (?, ?, ?)",
+                             (division_id, division_date, title))
+                conn.commit()
+            except sqlite3.OperationalError:
+                print('FAILED DIVISION INSERT: {} - {} - {}'.format(division_id, division_date,
+                                                                    title))
+        conn.close()
 
 
 def get_member_id(about):
@@ -158,12 +158,41 @@ def get_member_data(member_id, session):
     return ret
 
 
+def insert_member(conn, curs, member_id, member_data):
+    """ Inserts a member into the database given their data """
+    try:
+        curs.execute('''INSERT INTO MEMBER
+                        (ID, FULL_NAME, GIVEN_NAME, ADDITIONAL_NAME, FAMILY_NAME, PARTY, CONSTITUENCY)
+                        VALUES (?, ?, ?, ?, ?, ?, ?)''',
+                     (member_id, member_data['full_name'],
+                      member_data['given_name'], member_data['additional_name'],
+                      member_data['family_name'], member_data['party'],
+                      member_data['constituency']))
+        conn.commit()
+    except sqlite3.OperationalError:
+        print('FAILED MEMBER INSERT: {}'.format(member_data['full_name']))
+
+
+def insert_vote(conn, curs, member_id, division_id, member_vote):
+    """ Inserts a vote into the database given its data """
+    try:
+        curs.execute("INSERT INTO VOTE (MEMBER_ID, DIVISION_ID, VOTE) VALUES (?, ?, ?)",
+                     (member_id, division_id, member_vote))
+        conn.commit()
+    except sqlite3.OperationalError:
+        print('FAILED VOTE INSERT: {} - {} - {}'
+              .format(member_id, division_id, member_vote))
+    except sqlite3.IntegrityError:
+        print('FAILED VOTE INSERT (DUPLICATE): {} - {} - {}'
+              .format(member_id, division_id, member_vote))
+
 def fill_member_and_vote_tables():
     """ Fills the Member and Vote tables in the database """
     conn = sqlite3.connect(DB_PATH)
     curs = conn.cursor()
     curs.execute("SELECT ID FROM DIVISION")
     rows = curs.fetchall()
+    member_ids = []
     with requests.Session() as session:
         for row in rows:
             division_id = row[0]
@@ -174,31 +203,11 @@ def fill_member_and_vote_tables():
             for vote in votes:
                 member_id = get_member_id(vote['member'][0]['_about'])
                 member_vote = get_member_vote(vote['type'])
-                curs.execute("SELECT count(*) FROM MEMBER WHERE ID = ?", (member_id,))
-                data = curs.fetchone()[0]
-                if data == 0:
+                if member_id not in member_ids:
+                    member_ids.append(member_id)
                     member_data = get_member_data(member_id, session)
-                    try:
-                        curs.execute('''INSERT INTO MEMBER
-                                        (ID, FULL_NAME, GIVEN_NAME, ADDITIONAL_NAME, FAMILY_NAME, PARTY, CONSTITUENCY)
-                                        VALUES (?, ?, ?, ?, ?, ?, ?)''',
-                                     (member_id, member_data['full_name'],
-                                      member_data['given_name'], member_data['additional_name'],
-                                      member_data['family_name'], member_data['party'],
-                                      member_data['constituency']))
-                        conn.commit()
-                    except sqlite3.OperationalError:
-                        print('FAILED MEMBER INSERT: {}'.format(member_data['full_name']))
-                try:
-                    curs.execute("INSERT INTO VOTE (MEMBER_ID, DIVISION_ID, VOTE) VALUES (?, ?, ?)",
-                                 (member_id, division_id, member_vote))
-                    conn.commit()
-                except sqlite3.OperationalError:
-                    print('FAILED VOTE INSERT: {} - {} - {}'
-                          .format(member_id, division_id, member_vote))
-                except sqlite3.IntegrityError:
-                    print('FAILED VOTE INSERT (DUPLICATE): {} - {} - {}'
-                          .format(member_id, division_id, member_vote))
+                    insert_member(conn, curs, member_id, member_data)
+                insert_vote(conn, curs, member_id, division_id, member_vote)
 
     conn.close()
 
