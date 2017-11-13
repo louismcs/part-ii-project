@@ -7,7 +7,8 @@ import re
 import Levenshtein
 import requests
 from bs4 import BeautifulSoup
-from helper import date_range, DB_PATH, START_DATE, END_DATE
+from helper import (date_range, DB_PATH, START_DATE, END_DATE,
+                    generate_debates_csv, generate_speeches_csv)
 
 
 class MatchException(Exception):
@@ -43,7 +44,7 @@ def insert_speech(conn, curs, url, member_id, quote):
 
 def remove_title(name):
     """ Removes the first title prefix from the given string """
-    titles = ['Mr ', 'Ms ', 'Mrs ', 'Miss ', 'Dr ', 'Professor ', 'Reverend ', 'Sir ', 'Dame ']
+    titles = ['Mr ', 'Ms ', 'Mrs ', 'Miss ', 'Dr ', 'Professor ', 'Reverend ', 'Sir ', 'Dame ', 'Hon. ', 'Hon ']
 
     for title in titles:
         if name.startswith(title):
@@ -139,10 +140,9 @@ def add_day(day, name_list, match_list, black_list, conn, curs):
             for section in sections:
                 try:
                     sec = section['section']
-                    if 'iraq' in sec['title'].lower():
-                        add_debate('http://hansard.millbanksystems.com/commons/{}/{}'
-                                   .format(date_string, sec['slug']), day, sec['title'],
-                                   name_list, match_list, black_list, conn, curs)
+                    add_debate('http://hansard.millbanksystems.com/commons/{}/{}'
+                                .format(date_string, sec['slug']), day, sec['title'],
+                                name_list, match_list, black_list, conn, curs)
                 except KeyError:
                     print('Not a standard section')
         except KeyError:
@@ -161,3 +161,5 @@ def get_speeches():
     black_list = []
     for day in date_range(START_DATE, END_DATE):
         add_day(day, name_list, match_list, black_list, conn, curs)
+    generate_debates_csv()
+    generate_speeches_csv()

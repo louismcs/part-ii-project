@@ -6,7 +6,7 @@ import sqlite3
 from datetime import date, timedelta
 
 
-DB_PATH = 'Data/Corpus/db_test39.db'
+DB_PATH = 'Data/Corpus/db_test41.db'
 START_DATE = date(2003, 3, 18)
 END_DATE = date(2003, 3, 19)
 
