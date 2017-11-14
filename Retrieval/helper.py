@@ -6,7 +6,7 @@ import sqlite3
 from datetime import date, timedelta
 
 
-DB_PATH = 'Data/Corpus/db_test42.db'
+DB_PATH = 'Data/corpus.db'
 START_DATE = date(2001, 9, 11)
 END_DATE = date(2003, 3, 19)
 
@@ -43,14 +43,7 @@ def generate_debates_csv():
     generate_csv('DEBATE')
 
 
-def generate_speeches_csv():
-    """ Generates a csv of the contents of the speeches table """
-    generate_csv('SPEECH')
-
-
 def date_range(start_date, end_date):
     """Retuns all dates between start_date (inclusive) and end_date (exclusive)"""
     for count in range(int((end_date - start_date).days)):
         yield start_date + timedelta(count)
-
-generate_speeches_csv()

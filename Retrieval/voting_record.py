@@ -4,7 +4,7 @@
 import json
 import sqlite3
 import requests
-from helper import (date_range, DB_PATH, START_DATE, END_DATE)
+from helper import date_range, DB_PATH, START_DATE, END_DATE
 
 
 def create_tables():
@@ -83,6 +83,7 @@ def division_inserts(day):
         divisions = obj['result']['items']
         conn = sqlite3.connect(DB_PATH)
         curs = conn.cursor()
+
         for division in divisions:
             division_id = get_division_id(division['_about'])
             title = division['title']
@@ -190,9 +191,11 @@ def fill_member_and_vote_tables():
             url = 'http://lda.data.parliament.uk/commonsdivisions/id/{}.json'.format(division_id)
             obj = session.get(url).json()
             votes = obj['result']['primaryTopic']['vote']
+
             for vote in votes:
                 member_id = get_member_id(vote['member'][0]['_about'])
                 member_vote = get_member_vote(vote['type'])
+
                 if member_id not in member_ids:
                     member_ids.append(member_id)
                     member_data = get_member_data(member_id, session)

@@ -7,8 +7,7 @@ import re
 import Levenshtein
 import requests
 from bs4 import BeautifulSoup
-from helper import (date_range, DB_PATH, START_DATE, END_DATE,
-                    generate_debates_csv, generate_speeches_csv)
+from helper import date_range, DB_PATH, START_DATE, END_DATE
 
 
 class MatchException(Exception):
@@ -23,22 +22,22 @@ def generate_name_list(curs):
     return rows
 
 
-def insert_debate(conn, curs, url, day, title):
+def insert_debate(database, url, day, title):
     """ Inserts a debate into the database given its data """
     try:
-        curs.execute("INSERT INTO DEBATE (URL, DATE, TITLE) VALUES (?, ?, ?)",
-                     (url, day.strftime('%Y-%m-%d'), title))
-        conn.commit()
+        database['curs'].execute("INSERT INTO DEBATE (URL, DATE, TITLE) VALUES (?, ?, ?)",
+                                 (url, day.strftime('%Y-%m-%d'), title))
+        database['conn'].commit()
     except sqlite3.OperationalError:
         print('FAILED DEBATE INSERT: {} - {} - {}'.format(url, day.strftime('%Y-%m-%d'), title))
 
 
-def insert_speech(conn, curs, url, member_id, quote):
+def insert_speech(database, url, member_id, quote):
     """ Inserts a speech into the database given its data """
     try:
-        curs.execute("INSERT INTO SPEECH (DEBATE_URL, MEMBER_ID, QUOTE) VALUES (?, ?, ?)",
-                     (url, member_id, quote))
-        conn.commit()
+        database['curs'].execute('''INSERT INTO SPEECH (DEBATE_URL, MEMBER_ID, QUOTE)
+                                    VALUES (?, ?, ?)''', (url, member_id, quote))
+        database['conn'].commit()
     except sqlite3.OperationalError:
         print('FAILED SPEECH INSERT: {} - {} - {}'.format(url, member_id, quote))
 
@@ -81,26 +80,27 @@ def match_first_and_family_name(no_titles, name_list, speaker):
             myfile.write("{};{};{}\n".format(speaker, best_match[1], best_match[0]))
         raise MatchException()
 
-def match_full_name(speaker, name_list, match_list):
+def match_full_name(speaker, member_lists):
     """ Returns the member_id for the given speaker where a match exists """
-    if speaker in match_list:
-        mp_id = match_list[speaker]
+    if speaker in member_lists['match_list']:
+        mp_id = member_lists['match_list'][speaker]
     else:
         max_similarity = 0
         no_titles = remove_titles(speaker)
-        for name in name_list:
+
+        for name in member_lists['name_list']:
             similarity = Levenshtein.ratio(remove_titles(name[1]), no_titles)
             if similarity > max_similarity:
                 max_similarity = similarity
                 best_match = name
 
         if max_similarity > 0.85:
-            name_list.remove(best_match)
+            member_lists['name_list'].remove(best_match)
             mp_id = best_match[0]
         else:
-            mp_id = match_first_and_family_name(no_titles, name_list, speaker)
+            mp_id = match_first_and_family_name(no_titles, member_lists['name_list'], speaker)
 
-        match_list[speaker] = mp_id
+        member_lists['match_list'][speaker] = mp_id
 
     return mp_id
 
@@ -114,38 +114,43 @@ def get_paragraph_text(paragraph):
     return paragraph
 
 
-def add_quote(blockquote, url, name_list, match_list, conn, curs):
+def add_quote(blockquote, url, member_lists, database):
     """Adds a quote (identified by its html element) to the database"""
     try:
         speaker = blockquote.cite.a['title']
         paragraphs = blockquote.find_all("p")
         quote = ""
+
         for paragraph in paragraphs:
             quote += get_paragraph_text(str(paragraph)) + "\n"
+
         try:
-            member_id = match_full_name(speaker, name_list, match_list)
-            insert_speech(conn, curs, url, member_id, quote)
+            member_id = match_full_name(speaker, member_lists)
+            insert_speech(database, url, member_id, quote)
         except MatchException:
             pass
+
     except TypeError:
         print('Cannot parse quote')
 
 
-def add_debate(url, day, title, name_list, match_list, conn, curs):
+def add_debate(url, day, title, member_lists, database):
     """Adds the speeches from a debate (identified by its url) to the database"""
-    insert_debate(conn, curs, url, day, title)
+    insert_debate(database, url, day, title)
     print('Debate: {} - {}'.format(title, day.strftime("%Y/%b/%d")))
     page = urlopen(url)
     page_soup = BeautifulSoup(page, "html.parser")
     blockquotes = page_soup.find_all("blockquote")
-    for blockquote in blockquotes:
-        add_quote(blockquote, url, name_list, match_list, conn, curs)
 
-def add_day(day, name_list, match_list, conn, curs):
+    for blockquote in blockquotes:
+        add_quote(blockquote, url, member_lists, database)
+
+def add_day(day, member_lists, database):
     """Gets the speeches for a given day"""
     date_string = day.strftime("%Y/%b/%d").lower()
     url = 'http://hansard.millbanksystems.com/sittings/{}.js'.format(date_string)
     res = requests.get(url)
+
     try:
         obj = json.loads(res.text)
         try:
@@ -155,7 +160,7 @@ def add_day(day, name_list, match_list, conn, curs):
                     sec = section['section']
                     add_debate('http://hansard.millbanksystems.com/commons/{}/{}'
                                .format(date_string, sec['slug']), day, sec['title'],
-                               name_list, match_list, conn, curs)
+                               member_lists, database)
                 except KeyError:
                     print('Not a standard section')
         except KeyError:
@@ -169,7 +174,14 @@ def get_speeches():
     """ Adds debates and their speeches to the database """
     conn = sqlite3.connect(DB_PATH)
     curs = conn.cursor()
+
+    database = {
+        'conn': conn,
+        'curs': curs,
+    }
+
     name_list = generate_name_list(curs)
+
     match_list = {'Earl of Ancram' : '259',
                   'Dr Jenny Tonge' : '200',
                   'Mr Nigel Evans' : '474',
@@ -207,5 +219,11 @@ def get_speeches():
                   'Mrs Anne Picking' : '1410',
                   'Ms Dawn Primarolo' : '217',
                  }
+
+    member_lists = {
+        'name_list': name_list,
+        'match_list': match_list
+    }
+
     for day in date_range(START_DATE, END_DATE):
-        add_day(day, name_list, match_list, conn, curs)
+        add_day(day, member_lists, database)
