@@ -1,0 +1,107 @@
+David Blunkett;Lord Blunkett;0.7407407407407407
+Michael Martin;Michael Mates;0.8148148148148148
+Patrick Cormack;Patrick Mercer;0.6896551724137931
+Michael Howard;Michael Moore;0.7407407407407407
+Matthew Taylor;Matthew Green;0.6666666666666666
+John McFall;John MacDougall;0.7692307692307693
+Don Foster;Michael Foster;0.5833333333333334
+Brian Mawhinney;Lord Mawhinney;0.7586206896551724
+Brian Donohoe;Brian H. Donohoe;0.896551724137931
+Anne McIntosh;Anne Moffat;0.5833333333333334
+Andrew Lansley;Andrew Mackinlay;0.7333333333333333
+Paul Tyler;Paul Clark;0.7
+John Hutton;John Austin;0.7272727272727273
+Bob Marshall-Andrews;Robert Marshall-Andrews;0.8837209302325582
+Menzies Campbell;Ronnie Campbell;0.7741935483870968
+Oona King;Andy King;0.6666666666666666
+Earl of Ancram;Lord Horam;0.5
+Jenny Tonge;Baroness Tonge;0.56
+Francis Maude;Hywel Francis;0.5384615384615384
+Peter Hain;Peter Duncan;0.7272727272727273
+Nigel Evans;Nigel Waterson;0.64
+Mick Clapham;Michael Clapham;0.8148148148148148
+Geoff Hoon;Geoffrey Hoon;0.8695652173913043
+Margaret Jackson;Margaret Moran;0.7333333333333333
+Malcolm Bruce;Malcolm Wicks;0.6923076923076923
+Archy Kirkwood;Lord Kirkwood of Kirkhope;0.5128205128205128
+George Young;George Mudie;0.6666666666666666
+Martin Smyth;The Rev Martin Smyth;0.75
+Angela Browning;Baroness Browning;0.6875
+Clive Soley;Elliot Morley;0.5833333333333334
+Andrew Stunell;Andrew Mitchell;0.7586206896551724
+Jack Cunningham;Jim Cunningham;0.8275862068965517
+Jim Paice;James Paice;0.8
+Tony Banks;Tony Blair;0.7
+Douglas Hogg;Douglas Alexander;0.5517241379310345
+Andrew Robathan;Lord Robathan;0.7142857142857143
+John Reid;John Randall;0.6666666666666666
+Quentin Davies;Denzil Davies;0.7407407407407407
+Ian Paisley;Ian Cawsey;0.7619047619047619
+Andrew King;Andy King;0.8
+Derek Foster;Michael Foster;0.6153846153846154
+John Burnett;John Barrett;0.8333333333333334
+Helen Brinton;Helen Jones;0.6666666666666666
+George Foulkes;George Mudie;0.6923076923076923
+Ian Lucas;Ian C. Lucas;0.8571428571428571
+Howard Flight;Lord Flight;0.8333333333333334
+Alan J. Williams;Alan Williams;0.896551724137931
+Gregory Barker;Barry Gardiner;0.5714285714285714
+Donald Anderson;Janet Anderson;0.6896551724137931
+Michael Lord;Michael Moore;0.8
+Richard Allan;Richard Bacon;0.7692307692307693
+David Borrow;David S. Borrow;0.8888888888888888
+John Horam;John Hume;0.7368421052631579
+Tim Boswell;Kim Howells;0.7272727272727273
+Phil Willis;Phil Woolas;0.7272727272727273
+Peter Mandelson;Lord Mandelson;0.7586206896551724
+Lady Sylvia Hermon;Lady Hermon;0.7586206896551724
+David Willetts;Lord Willetts;0.7407407407407407
+Alistair Darling;Alistair Burt;0.6896551724137931
+David MacLean;David Laws;0.6956521739130435
+James Arbuthnot;James Cran;0.64
+Joyce Quin;Baroness Quin;0.6086956521739131
+John Gummer;John Hume;0.8
+Lindsay Hoyle;Linda Gilroy;0.64
+Beverley Hughes;Baroness Hughes of Stretford;0.46511627906976744
+Alan Beith;Alan Reid;0.7368421052631579
+John Maples;John Healey;0.7272727272727273
+Alan Howarth;Alan Hurst;0.7272727272727273
+Michael Spicer;Michael Moore;0.6666666666666666
+Martin O'Neill;Marion Roe;0.5833333333333334
+Tony Wright;Anthony Wright;0.8
+Richard Spring;Richard Caborn;0.7142857142857143
+John Austin-Walker;John Austin;0.7586206896551724
+James Wray;James Cran;0.8
+Jim Knight;Jim Cunningham;0.6666666666666666
+Bill Cash;William Cash;0.7619047619047619
+Tessa Jowell;Baroness Jowell;0.7407407407407407
+Dennis Turner;Desmond Turner;0.7407407407407407
+Keith Bradley;Lord Bradley;0.64
+Virginia Bottomley;Adrian Bailey;0.5161290322580645
+Chris Smith;Andrew Smith;0.6086956521739131
+Douglas Naysmith;Doug Naysmith;0.896551724137931
+Jean Corston;Baroness Corston;0.7142857142857143
+Paul Boateng;Lord Boateng;0.6666666666666666
+Gillian Shephard;Ian Stewart;0.5185185185185185
+David Chidgey;Lord Chidgey;0.72
+Estelle Morris;Dan Norris;0.5
+Eddie O'Hara;Edward O'Hara;0.8
+Paul Murphy;Denis Murphy;0.6086956521739131
+Don Touhig;Lord Touhig;0.7619047619047619
+Jimmy Hood;Jim Hood;0.8888888888888888
+Helen Liddell;Helen Clark;0.5833333333333334
+Brian Cotter;Lord Cotter;0.6956521739130435
+Michael Wills;Michael Portillo;0.7586206896551724
+Andy Love;Andrew Love;0.8
+William Hague;William Cash;0.72
+David Trimble;Lord Trimble;0.72
+Lewis Moonie;Lord Moonie;0.6956521739130435
+Ann Taylor;Alan Meale;0.5
+Des Browne;Baroness Browning;0.5925925925925926
+Des Turner;Desmond Turner;0.8333333333333334
+John Prescott;Lord Prescott;0.7692307692307693
+Dave Watts;Lord Watts;0.6
+Irene Adams;Gerry Adams;0.6363636363636364
+Nick Brown;Nicholas Brown;0.75
+Anne Picking;Anne McGuire;0.5833333333333334
+Dawn Primarolo;Ian Pearson;0.56
