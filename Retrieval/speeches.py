@@ -88,6 +88,7 @@ def match_full_name(speaker, name_list, match_list, black_list):
     """ Returns the member_id for the given speaker where a match exists """
     if speaker in match_list:
         mp_id = match_list[speaker]
+        print('SUCCESS: {}'.format(speaker))
     else:
         with open("matcherrors.txt", "a") as myfile:
             myfile.write("{}\n".format(speaker))
