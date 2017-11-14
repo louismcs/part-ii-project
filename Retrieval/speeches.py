@@ -79,16 +79,19 @@ def match_first_and_family_name(no_titles, name_list, black_list, speaker):
     else:
         black_list.append(speaker)
         with open("blacklist.txt", "a") as myfile:
-            myfile.write("{};{};{}\n".format(no_titles,
+            myfile.write("{};{};{}\n".format(speaker,
                                              '{} {}'.format(best_match[2], best_match[3]),
-                                             max_similarity))
+                                             best_match[0]))
         raise MatchException()
 
 def match_full_name(speaker, name_list, match_list, black_list):
     """ Returns the member_id for the given speaker where a match exists """
     if speaker in match_list:
         mp_id = match_list[speaker]
-    elif speaker in black_list:
+    else:
+        with open("matcherrors.txt", "a") as myfile:
+            myfile.write("{}\n".format(speaker))
+    ''' elif speaker in black_list:
         raise MatchException()
     else:
         max_similarity = 0
@@ -105,7 +108,7 @@ def match_full_name(speaker, name_list, match_list, black_list):
         else:
             mp_id = match_first_and_family_name(no_titles, name_list, black_list, speaker)
 
-        match_list[speaker] = mp_id
+        match_list[speaker] = mp_id '''
 
     return mp_id
 
@@ -130,14 +133,13 @@ def add_quote(blockquote, url, name_list, match_list, black_list, conn, curs):
         try:
             member_id = match_full_name(speaker, name_list, match_list, black_list)
             insert_speech(conn, curs, url, member_id, quote)
-            print('{} - MATCH FOUND!'.format(speaker))
         except MatchException:
             pass
     except TypeError:
         print('Cannot parse quote')
 
 
-def add_debate(url, day, title, name_list, match_list, black_list, conn, curs, to_do_list):
+def add_debate(url, day, title, name_list, match_list, black_list, conn, curs):
     """Adds the speeches from a debate (identified by its url) to the database"""
     #insert_debate(conn, curs, url, day, title)
     print('Debate: {} - {}'.format(title, day.strftime("%Y/%b/%d")))
@@ -146,12 +148,12 @@ def add_debate(url, day, title, name_list, match_list, black_list, conn, curs, t
     blockquotes = page_soup.find_all("blockquote")
     for blockquote in blockquotes:
         try:
-            if remove_titles(blockquote.cite.a['title']) in to_do_list:
+            if blockquote.cite.a['title'] in match_list:
                 add_quote(blockquote, url, name_list, match_list, black_list, conn, curs)
         except TypeError:
             pass
 
-def add_day(day, name_list, match_list, black_list, conn, curs, to_do_list):
+def add_day(day, name_list, match_list, black_list, conn, curs):
     """Gets the speeches for a given day"""
     date_string = day.strftime("%Y/%b/%d").lower()
     url = 'http://hansard.millbanksystems.com/sittings/{}.js'.format(date_string)
@@ -165,7 +167,7 @@ def add_day(day, name_list, match_list, black_list, conn, curs, to_do_list):
                     sec = section['section']
                     add_debate('http://hansard.millbanksystems.com/commons/{}/{}'
                                .format(date_string, sec['slug']), day, sec['title'],
-                               name_list, match_list, black_list, conn, curs, to_do_list)
+                               name_list, match_list, black_list, conn, curs)
                 except KeyError:
                     print('Not a standard section')
         except KeyError:
@@ -180,117 +182,46 @@ def get_speeches():
     conn = sqlite3.connect(DB_PATH)
     curs = conn.cursor()
     name_list = generate_name_list(curs)
-    match_list = {}
+    match_list = {'Earl of Ancram' : '259',
+                  'Dr Jenny Tonge' : '200',
+                  'Mr Nigel Evans' : '474',
+                  'Mr Mick Clapham' : '388',
+                  'Miss Margaret Jackson' : '328',
+                  'Mr Archy Kirkwood' : '635',
+                  'Reverend Martin Smyth' : '644',
+                  'Mr Andrew Stunell' : '445',
+                  'Dr Jack Cunningham' : '496',
+                  'Mr Jim Paice' : '124',
+                  'Mr Tony Banks' : '3748',
+                  'Mr Quentin Davies' : '346',
+                  'Ms Helen Brinton' : '122',
+                  'Mr Richard Allan' : '397',
+                  'Mr Tim Boswell' : '352',
+                  'Mr Phil Willis' : '4151',
+                  'Lady Sylvia Hermon' : '1437',
+                  'Mr Lindsay Hoyle' : '467',
+                  'Mr Michael Spicer' : '270',
+                  'Mr Tony Wright' : '125',
+                  'Mr John Austin-Walker' : '168',
+                  'Mr Jim Knight' : '4160',
+                  'Mr Bill Cash' : '288',
+                  'Mr Chris Smith' : '186',
+                  'Mr Eddie O\'Hara' : '482',
+                  'Mr Don Touhig' : '542',
+                  'Mr Michael Wills' : '2819',
+                  'Mr Andy Love' : '164',
+                  'Mr David Trimble' : '658',
+                  'Mrs Ann Taylor' : '407',
+                  'Mr Des Browne' : '620',
+                  'Dr Des Turner' : '23',
+                  'Mrs Irene Adams' : '631',
+                  'Mr Nick Brown' : '523',
+                  'Mrs Anne Picking' : '1410',
+                  'Ms Dawn Primarolo' : '217',
+                 }
     black_list = []
-    to_do_list = ["David Blunkett",
-                  "Michael Martin",
-                  "Patrick Cormack",
-                  "Michael Howard",
-                  "Matthew Taylor",
-                  "John McFall",
-                  "Don Foster",
-                  "Brian Mawhinney",
-                  "Brian Donohoe",
-                  "Anne McIntosh",
-                  "Andrew Lansley",
-                  "Paul Tyler",
-                  "John Hutton",
-                  "Bob Marshall-Andrews",
-                  "Menzies Campbell",
-                  "Oona King",
-                  "Earl of Ancram",
-                  "Jenny Tonge",
-                  "Francis Maude",
-                  "Peter Hain",
-                  "Nigel Evans",
-                  "Mick Clapham",
-                  "Geoff Hoon",
-                  "Margaret Jackson",
-                  "Malcolm Bruce",
-                  "Archy Kirkwood",
-                  "George Young",
-                  "Martin Smyth",
-                  "Angela Browning",
-                  "Clive Soley",
-                  "Andrew Stunell",
-                  "Jack Cunningham",
-                  "Jim Paice",
-                  "Tony Banks",
-                  "Douglas Hogg",
-                  "Andrew Robathan",
-                  "John Reid",
-                  "Quentin Davies",
-                  "Ian Paisley",
-                  "Andrew King",
-                  "Derek Foster",
-                  "John Burnett",
-                  "Helen Brinton",
-                  "George Foulkes",
-                  "Ian Lucas",
-                  "Howard Flight",
-                  "Alan J. Williams",
-                  "Gregory Barker",
-                  "Donald Anderson",
-                  "Michael Lord",
-                  "Richard Allan",
-                  "David Borrow",
-                  "John Horam",
-                  "Tim Boswell",
-                  "Phil Willis",
-                  "Peter Mandelson",
-                  "Lady Sylvia Hermon",
-                  "David Willetts",
-                  "Alistair Darling",
-                  "David MacLean",
-                  "James Arbuthnot",
-                  "Joyce Quin",
-                  "John Gummer",
-                  "Lindsay Hoyle",
-                  "Beverley Hughes",
-                  "Alan Beith",
-                  "John Maples",
-                  "Alan Howarth",
-                  "Michael Spicer",
-                  "Martin O'Neill",
-                  "Tony Wright",
-                  "Richard Spring",
-                  "John Austin-Walker",
-                  "James Wray",
-                  "Jim Knight",
-                  "Bill Cash",
-                  "Tessa Jowell",
-                  "Dennis Turner",
-                  "Keith Bradley",
-                  "Virginia Bottomley",
-                  "Chris Smith",
-                  "Douglas Naysmith",
-                  "Jean Corston",
-                  "Paul Boateng",
-                  "Gillian Shephard",
-                  "David Chidgey",
-                  "Estelle Morris",
-                  "Eddie O'Hara",
-                  "Paul Murphy",
-                  "Don Touhig",
-                  "Jimmy Hood",
-                  "Helen Liddell",
-                  "Brian Cotter",
-                  "Michael Wills",
-                  "Andy Love",
-                  "William Hague",
-                  "David Trimble",
-                  "Lewis Moonie",
-                  "Ann Taylor",
-                  "Des Browne",
-                  "Des Turner",
-                  "John Prescott",
-                  "Dave Watts",
-                  "Irene Adams",
-                  "Nick Brown",
-                  "Anne Picking",
-                  "Dawn Primarolo"]
     for day in date_range(START_DATE, END_DATE):
-        add_day(day, name_list, match_list, black_list, conn, curs, to_do_list)
+        add_day(day, name_list, match_list, black_list, conn, curs)
     generate_debates_csv()
     generate_speeches_csv()
 
