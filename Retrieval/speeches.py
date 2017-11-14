@@ -64,7 +64,7 @@ def remove_titles(name):
     return ret
 
 
-def match_first_and_family_name(no_titles, name_list, black_list, speaker):
+def match_first_and_family_name(no_titles, name_list, speaker):
     """ Returns the member id for mps using their given and family names """
     max_similarity = 0
     for name in name_list:
@@ -77,23 +77,14 @@ def match_first_and_family_name(no_titles, name_list, black_list, speaker):
         name_list.remove(best_match)
         return best_match[0]
     else:
-        black_list.append(speaker)
         with open("blacklist.txt", "a") as myfile:
-            myfile.write("{};{};{}\n".format(speaker,
-                                             '{} {}'.format(best_match[2], best_match[3]),
-                                             best_match[0]))
+            myfile.write("{};{};{}\n".format(speaker, best_match[1], best_match[0]))
         raise MatchException()
 
-def match_full_name(speaker, name_list, match_list, black_list):
+def match_full_name(speaker, name_list, match_list):
     """ Returns the member_id for the given speaker where a match exists """
     if speaker in match_list:
         mp_id = match_list[speaker]
-        print('SUCCESS: {}'.format(speaker))
-    else:
-        with open("matcherrors.txt", "a") as myfile:
-            myfile.write("{}\n".format(speaker))
-    ''' elif speaker in black_list:
-        raise MatchException()
     else:
         max_similarity = 0
         no_titles = remove_titles(speaker)
@@ -107,9 +98,9 @@ def match_full_name(speaker, name_list, match_list, black_list):
             name_list.remove(best_match)
             mp_id = best_match[0]
         else:
-            mp_id = match_first_and_family_name(no_titles, name_list, black_list, speaker)
+            mp_id = match_first_and_family_name(no_titles, name_list, speaker)
 
-        match_list[speaker] = mp_id '''
+        match_list[speaker] = mp_id
 
     return mp_id
 
@@ -123,7 +114,7 @@ def get_paragraph_text(paragraph):
     return paragraph
 
 
-def add_quote(blockquote, url, name_list, match_list, black_list, conn, curs):
+def add_quote(blockquote, url, name_list, match_list, conn, curs):
     """Adds a quote (identified by its html element) to the database"""
     try:
         speaker = blockquote.cite.a['title']
@@ -132,7 +123,7 @@ def add_quote(blockquote, url, name_list, match_list, black_list, conn, curs):
         for paragraph in paragraphs:
             quote += get_paragraph_text(str(paragraph)) + "\n"
         try:
-            member_id = match_full_name(speaker, name_list, match_list, black_list)
+            member_id = match_full_name(speaker, name_list, match_list)
             insert_speech(conn, curs, url, member_id, quote)
         except MatchException:
             pass
@@ -140,21 +131,17 @@ def add_quote(blockquote, url, name_list, match_list, black_list, conn, curs):
         print('Cannot parse quote')
 
 
-def add_debate(url, day, title, name_list, match_list, black_list, conn, curs):
+def add_debate(url, day, title, name_list, match_list, conn, curs):
     """Adds the speeches from a debate (identified by its url) to the database"""
-    #insert_debate(conn, curs, url, day, title)
+    insert_debate(conn, curs, url, day, title)
     print('Debate: {} - {}'.format(title, day.strftime("%Y/%b/%d")))
     page = urlopen(url)
     page_soup = BeautifulSoup(page, "html.parser")
     blockquotes = page_soup.find_all("blockquote")
     for blockquote in blockquotes:
-        try:
-            if blockquote.cite.a['title'] in match_list:
-                add_quote(blockquote, url, name_list, match_list, black_list, conn, curs)
-        except TypeError:
-            pass
+        add_quote(blockquote, url, name_list, match_list, conn, curs)
 
-def add_day(day, name_list, match_list, black_list, conn, curs):
+def add_day(day, name_list, match_list, conn, curs):
     """Gets the speeches for a given day"""
     date_string = day.strftime("%Y/%b/%d").lower()
     url = 'http://hansard.millbanksystems.com/sittings/{}.js'.format(date_string)
@@ -168,7 +155,7 @@ def add_day(day, name_list, match_list, black_list, conn, curs):
                     sec = section['section']
                     add_debate('http://hansard.millbanksystems.com/commons/{}/{}'
                                .format(date_string, sec['slug']), day, sec['title'],
-                               name_list, match_list, black_list, conn, curs)
+                               name_list, match_list, conn, curs)
                 except KeyError:
                     print('Not a standard section')
         except KeyError:
@@ -220,10 +207,5 @@ def get_speeches():
                   'Mrs Anne Picking' : '1410',
                   'Ms Dawn Primarolo' : '217',
                  }
-    black_list = []
     for day in date_range(START_DATE, END_DATE):
-        add_day(day, name_list, match_list, black_list, conn, curs)
-    generate_debates_csv()
-    generate_speeches_csv()
-
-get_speeches()
+        add_day(day, name_list, match_list, conn, curs)

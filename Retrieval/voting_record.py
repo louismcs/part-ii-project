@@ -4,8 +4,7 @@
 import json
 import sqlite3
 import requests
-from helper import (date_range, DB_PATH, generate_divisions_csv, generate_members_csv,
-                    generate_votes_csv, START_DATE, END_DATE)
+from helper import (date_range, DB_PATH, START_DATE, END_DATE)
 
 
 def create_tables():
@@ -211,6 +210,3 @@ def get_voting_record():
         division_inserts(day)
 
     fill_member_and_vote_tables()
-    generate_divisions_csv()
-    generate_members_csv()
-    generate_votes_csv()
