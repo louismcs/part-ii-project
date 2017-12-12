@@ -52,7 +52,7 @@ def condense_bags(bags, words):
     return [[bag[word] for word in words] for bag in bags]
 
 
-def generate_classifier_data(gen_file, spam_file):
+def generate_classifier_data(gen_file, spam_file, num_of_words):
     """ Returns the features and samples in a form that can be used
          by a classifier, given the filenames for the data """
 
@@ -60,7 +60,7 @@ def generate_classifier_data(gen_file, spam_file):
     spam_bags, sum_bag = parse_ems(spam_file, sum_bag)
 
 
-    common_words = [word[0] for word in sum_bag.most_common(7)]
+    common_words = [word[0] for word in sum_bag.most_common(num_of_words)]
 
     condensed_gen_bags = condense_bags(gen_bags, common_words)
     condensed_spam_bags = condense_bags(spam_bags, common_words)
@@ -78,16 +78,15 @@ def generate_classifier_data(gen_file, spam_file):
 
 def run():
     """ If this has a green line I'll get annoyed """
-    train_features, train_samples = generate_classifier_data('Data/Spam/train_GEN.ems',
-                                                             'Data/Spam/train_SPAM.ems')
+    for count in range(1, 100):
+        train_features, train_samples = generate_classifier_data('Data/Spam/train_GEN.ems',
+                                                                 'Data/Spam/train_SPAM.ems', count)
 
-    test_features, test_samples = generate_classifier_data('Data/Spam/test_GEN.ems',
-                                                             'Data/Spam/test_SPAM.ems')
+        test_features, test_samples = generate_classifier_data('Data/Spam/test_GEN.ems',
+                                                               'Data/Spam/test_SPAM.ems', count)
 
-    classifier = svm.SVC()
-    classifier.fit(train_features, train_samples)
-    print(classifier.predict([test_features[0]]))
-    print('----------')
-    print(classifier.score(test_features, test_samples))
+        classifier = svm.SVC()
+        classifier.fit(train_features, train_samples)
+        print('{} words score: {}'.format(count, classifier.score(test_features, test_samples)))
 
 run()
