@@ -2,34 +2,49 @@
 
 import collections
 import re
-import string
 
 from bs4 import BeautifulSoup
 
 
-def parse_ems():
-    """ Parses the ems email files """
-    handler = open('Data/Spam/train_GEN.ems').read()
+def remove_tags(body):
+    """ Removes any xml tags from a given xml body """
+    return re.sub(r"<(.)*?>", "", body)
+
+
+def remove_punctuation(body):
+    """ Removes punctuation from a given string """
+    body = body.replace("\n", " ")
+    body = re.sub(r"[^\w\d\s#'-]", '', body)
+    body = body.replace(" '", " ")
+    body = body.replace("' ", " ")
+    body = body.replace(" -", " ")
+    body = body.replace("- ", " ")
+    return body
+
+def generate_word_list(body):
+    """ Returns a list of words, given a message tag """
+    body = remove_tags(body)
+    body = remove_punctuation(body)
+    body = body.lower()
+    return body.split()
+
+
+def parse_ems(file):
+    """ Parses an ems file and creates the corresponding bags of words"""
+    handler = open('Data/Spam/{}.ems'.format(file)).read()
     soup = BeautifulSoup(handler, "lxml-xml")
     messages = soup.find_all("MESSAGE")
     bags = []
     sum_bag = collections.Counter()
     for message in messages:
-        body = str(message.MESSAGE_BODY)
-        body = re.sub(r"<(.)*?>", "", body)
-        body = body.replace("\n", " ")
-        body = re.sub(r"[^\w\d\s#']", '', body)
-        body = body.replace(" '", " ")
-        body = body.replace("' ", " ")
-        body = body.replace(" -", " ")
-        body = body.replace("- ", " ")
-        body = body.lower()
-        word_list = body.split()
+        word_list = generate_word_list(str(message.MESSAGE_BODY))
         count = collections.Counter()
         for word in word_list:
             count[word] += 1
             sum_bag[word] += 1
         bags.append(count)
+    return sum_bag
 
-    print(sum_bag.most_common(100))
-parse_ems()
+
+gen_bag = parse_ems('Data/Spam/train_GEN.ems')
+spam_bag = parse_ems('Data/Spam/train_SPAM.ems')
