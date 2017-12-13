@@ -5,6 +5,7 @@ import re
 
 from bs4 import BeautifulSoup
 from nltk.corpus import stopwords
+from nltk import PorterStemmer
 from sklearn import svm
 
 
@@ -31,6 +32,10 @@ def remove_stopwords(word_list, black_list, white_list):
             if (word in white_list) or ((word not in stop) and (word not in black_list))]
 
 
+def stem_words(word_list):
+    stemmer = PorterStemmer()
+    return [stemmer.stem(word) for word in word_list]
+
 def generate_word_list(body, settings):
     """ Returns a list of words, given a message tag """
     body = remove_tags(body)
@@ -41,6 +46,9 @@ def generate_word_list(body, settings):
 
     if settings['remove_stopwords']:
         word_list = remove_stopwords(word_list, settings['black_list'], settings['white_list'])
+
+    if settings['stem_words']:
+        word_list = stem_words(word_list)
 
     return word_list
 
@@ -129,10 +137,11 @@ def run():
     """ If this has a green line I'll get annoyed """
 
     settings = {
-        'black_list': ['#name', '#num', '#website', '#char'],
+        'black_list': [],
         'white_list': [],
-        'bag_size': 100,
-        'remove_stopwords': True
+        'bag_size': 1000,
+        'remove_stopwords': False,
+        'stem_words': True
     }
 
     train_features, train_samples, common_words = generate_train_data('Data/Spam/train_GEN.ems',
