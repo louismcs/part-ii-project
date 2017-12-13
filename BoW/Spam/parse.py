@@ -23,13 +23,6 @@ def remove_punctuation(body):
     body = body.replace("- ", " ")
     return body
 
-def generate_word_list(body):
-    """ Returns a list of words, given a message tag """
-    body = remove_tags(body)
-    body = remove_punctuation(body)
-    body = body.lower()
-    return body.split()
-
 
 def remove_stopwords(word_list, black_list, white_list):
     """ Returns a list of words (with stop words removed), given a word list """
@@ -38,15 +31,32 @@ def remove_stopwords(word_list, black_list, white_list):
             if (word in white_list) or ((word not in stop) and (word not in black_list))]
 
 
-def parse_train_ems(file, black_list, white_list, sum_bag):
-    """ Parses a train ems file and creates the corresponding bags of words"""
+def generate_word_list(body, settings):
+    """ Returns a list of words, given a message tag """
+    body = remove_tags(body)
+    body = remove_punctuation(body)
+    body = body.lower()
+
+    word_list = body.split()
+
+    if settings['remove_stopwords']:
+        word_list = remove_stopwords(word_list, settings['black_list'], settings['white_list'])
+
+    return word_list
+
+
+def get_messages(file):
     handler = open(file).read()
     soup = BeautifulSoup(handler, "lxml-xml")
-    messages = soup.find_all("MESSAGE")
+    return soup.find_all("MESSAGE")
+
+
+def parse_train_ems(file, settings, sum_bag):
+    """ Parses a train ems file and creates the corresponding bags of words"""
+    messages = get_messages(file)
     bags = []
     for message in messages:
-        word_list = generate_word_list(str(message.MESSAGE_BODY))
-        #word_list = remove_stopwords(word_list, black_list, white_list)
+        word_list = generate_word_list(str(message.MESSAGE_BODY), settings)
         bag = collections.Counter()
         for word in word_list:
             bag[word] += 1
@@ -55,15 +65,12 @@ def parse_train_ems(file, black_list, white_list, sum_bag):
     return bags, sum_bag
 
 
-def parse_test_ems(file, black_list, white_list):
+def parse_test_ems(file, settings):
     """ Parses a test ems file and creates the corresponding bags of words"""
-    handler = open(file).read()
-    soup = BeautifulSoup(handler, "lxml-xml")
-    messages = soup.find_all("MESSAGE")
+    messages = get_messages(file)
     bags = []
     for message in messages:
-        word_list = generate_word_list(str(message.MESSAGE_BODY))
-        word_list = remove_stopwords(word_list, black_list, white_list)
+        word_list = generate_word_list(str(message.MESSAGE_BODY), settings)
         bag = collections.Counter()
         for word in word_list:
             bag[word] += 1
@@ -92,26 +99,26 @@ def generate_classifier_data(gen_bags, spam_bags, common_words):
     return features, samples
 
 
-def generate_train_data(gen_file, spam_file, num_of_words, black_list, white_list):
+def generate_train_data(gen_file, spam_file, settings):
     """ Returns the features and samples in a form that can be used
          by a classifier, given the filenames for the data """
 
-    gen_bags, sum_bag = parse_train_ems(gen_file, black_list, white_list, collections.Counter())
-    spam_bags, sum_bag = parse_train_ems(spam_file, black_list, white_list, sum_bag)
+    gen_bags, sum_bag = parse_train_ems(gen_file, settings, collections.Counter())
+    spam_bags, sum_bag = parse_train_ems(spam_file, settings, sum_bag)
 
-    common_words = [word[0] for word in sum_bag.most_common(num_of_words)]
+    common_words = [word[0] for word in sum_bag.most_common(settings['bag_size'])]
 
     features, samples = generate_classifier_data(gen_bags, spam_bags, common_words)
 
     return features, samples, common_words
 
 
-def generate_test_data(gen_file, spam_file, common_words, black_list, white_list):
+def generate_test_data(gen_file, spam_file, common_words, settings):
     """ Returns the features and samples in a form that can be used
          by a classifier, given the filenames for the data """
 
-    gen_bags = parse_test_ems(gen_file, black_list, white_list)
-    spam_bags = parse_test_ems(spam_file, black_list, white_list)
+    gen_bags = parse_test_ems(gen_file, settings)
+    spam_bags = parse_test_ems(spam_file, settings)
 
     features, samples = generate_classifier_data(gen_bags, spam_bags, common_words)
 
@@ -121,21 +128,24 @@ def generate_test_data(gen_file, spam_file, common_words, black_list, white_list
 def run():
     """ If this has a green line I'll get annoyed """
 
-    black_list = ['#name', '#num', '#website', '#char']
-    white_list = []
+    settings = {
+        'black_list': ['#name', '#num', '#website', '#char'],
+        'white_list': [],
+        'bag_size': 100,
+        'remove_stopwords': True
+    }
 
-    for count in range(1, 100):
-        train_features, train_samples, common_words = generate_train_data('Data/Spam/train_GEN.ems',
-                                                                          'Data/Spam/train_SPAM.ems',
-                                                                          count, black_list, white_list)
+    train_features, train_samples, common_words = generate_train_data('Data/Spam/train_GEN.ems',
+                                                                      'Data/Spam/train_SPAM.ems',
+                                                                      settings)
 
-        test_features, test_samples = generate_test_data('Data/Spam/test_GEN.ems',
-                                                         'Data/Spam/test_SPAM.ems', common_words, black_list, white_list)
+    test_features, test_samples = generate_test_data('Data/Spam/test_GEN.ems',
+                                                     'Data/Spam/test_SPAM.ems',
+                                                     common_words, settings)
 
-        classifier = svm.SVC()
-        classifier.fit(train_features, train_samples)
-        print('{} words score: {}'.format(count, classifier.score(test_features, test_samples)))
-        print(common_words)
-        print('----------')
+    classifier = svm.SVC()
+    classifier.fit(train_features, train_samples)
+    print('Score: {}'.format(classifier.score(test_features, test_samples)))
+    print(common_words)
 
 run()
