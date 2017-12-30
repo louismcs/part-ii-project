@@ -6,6 +6,7 @@ import re
 from bs4 import BeautifulSoup
 from nltk.corpus import stopwords
 from nltk import PorterStemmer
+from nltk import ngrams
 from sklearn import svm
 
 
@@ -50,7 +51,9 @@ def generate_word_list(body, settings):
     if settings['stem_words']:
         word_list = stem_words(word_list)
 
-    return word_list
+    
+
+    return ngrams(word_list, settings['n_gram'])
 
 
 def get_messages(file):
@@ -139,9 +142,10 @@ def run():
     settings = {
         'black_list': [],
         'white_list': [],
-        'bag_size': 1000,
+        'bag_size': 100,
         'remove_stopwords': False,
-        'stem_words': True
+        'stem_words': True,
+        'n_gram': 2
     }
 
     train_features, train_samples, common_words = generate_train_data('Data/Spam/train_GEN.ems',
