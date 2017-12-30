@@ -34,6 +34,7 @@ def remove_stopwords(word_list, black_list, white_list):
 
 
 def stem_words(word_list):
+    """ Uses PorterStemmer to stem words in word_list argument """
     stemmer = PorterStemmer()
     return [stemmer.stem(word) for word in word_list]
 
@@ -51,12 +52,11 @@ def generate_word_list(body, settings):
     if settings['stem_words']:
         word_list = stem_words(word_list)
 
-    
-
     return ngrams(word_list, settings['n_gram'])
 
 
 def get_messages(file):
+    """ Returns the BeautifulSoup of all messages in the given .ems file """
     handler = open(file).read()
     soup = BeautifulSoup(handler, "lxml-xml")
     return soup.find_all("MESSAGE")
@@ -96,7 +96,8 @@ def condense_bags(bags, words):
 
 
 def generate_classifier_data(gen_bags, spam_bags, common_words):
-
+    """ Returns the features and samples in a form that can be used
+         by a classifier, given the bags and most common words in them """
     condensed_gen_bags = condense_bags(gen_bags, common_words)
     condensed_spam_bags = condense_bags(spam_bags, common_words)
     features = condensed_gen_bags + condensed_spam_bags
