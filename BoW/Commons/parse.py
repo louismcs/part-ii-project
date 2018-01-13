@@ -3,25 +3,61 @@
 import collections
 import re
 
+from nltk import PorterStemmer, ngrams
 from nltk.corpus import stopwords
-from nltk import PorterStemmer
-from nltk import ngrams
 from sklearn import svm
 
-def get_train_speeches(db_path, settings):
+
+def get_speeches(db_path, settings, training):
     """ Returns all the speeches in the given database that match the given settings """
 
     """ speeches only contains speeches of MPs that voted in the division given in settings
         should only use MPs used for training
-        speech.text is text
-        speech.aye is a boolean giving how the mp voted"""
+        speech['text'] is text
+        speech['aye'] is a boolean giving how the mp voted"""
+    mp_aye_list = get_mps(db_path, settings['division_id'], 'AyeVote')
+    mp_no_list = get_mps(db_path, settings['division_id'], 'NoVote')
+    for member in mp_aye_list:
+        if training:
+            if member in settings['testing_mps']:
+                mp_aye_list.remove(member)
+        else:
+            if member not in settings['testing_mps']:
+                mp_aye_list.remove(member)
+
+    for member in mp_no_list:
+        if training:
+            if member in settings['testing_mps']:
+                mp_no_list.remove(member)
+        else:
+            if member not in settings['testing_mps']:
+                mp_no_list.remove(member)
+
     speeches = []
+
+    debates = get_debates(settings)
+
+    aye_texts = get_speech_texts(mp_aye_list, debates)
+    no_texts = get_speech_texts(mp_no_list, debates)
+
+    for aye_text in aye_texts:
+        speeches.append({
+            'text': aye_text,
+            'aye': True
+        })
+
+    for no_text in no_texts:
+        speeches.append({
+            'text': no_text,
+            'aye': False
+        })
+
     return speeches
 
 
-def remove_tags(body):
-    """ Removes any xml tags from a given xml body """
-    return re.sub(r"<(.)*?>", "", body)
+def get_train_speeches(db_path, settings):
+    """ Returns all the speeches in the given database that match the given settings """
+    return get_speeches(db_path, settings, True)
 
 
 def remove_punctuation(body):
@@ -50,7 +86,6 @@ def stem_words(word_list):
 
 def generate_word_list(body, settings):
     """ Returns a list of words, given a message tag """
-    body = remove_tags(body)
     body = remove_punctuation(body)
     body = body.lower()
 
@@ -75,13 +110,13 @@ def parse_train_ems(db_path, settings):
     sum_bag = collections.Counter()
 
     for speech in speeches:
-        word_list = generate_word_list(speech.text, settings)
+        word_list = generate_word_list(speech['text'], settings)
         bag = collections.Counter()
         for word in word_list:
             bag[word] += 1
             sum_bag[word] += 1
 
-        if speech.aye:
+        if speech['aye']:
             aye_bags.append(bag)
         else:
             no_bags.append(bag)
@@ -125,9 +160,7 @@ def generate_train_data(db_path, settings):
 
 def get_test_speeches(db_path, settings):
     """ Returns all the speeches in the given database that match the given settings """
-
-    speeches = []
-    return speeches
+    return get_speeches(db_path, settings, False)
 
 
 def parse_test_ems(db_path, settings):
@@ -139,12 +172,12 @@ def parse_test_ems(db_path, settings):
     no_bags = []
 
     for speech in speeches:
-        word_list = generate_word_list(speech.text, settings)
+        word_list = generate_word_list(speech['text'], settings)
         bag = collections.Counter()
         for word in word_list:
             bag[word] += 1
 
-        if speech.aye:
+        if speech['aye']:
             aye_bags.append(bag)
         else:
             no_bags.append(bag)
@@ -174,7 +207,8 @@ def run():
         'n_gram': 1,
         'division_id': 102564,
         'all_debates': True,
-        'debate_terms': []
+        'debate_terms': [],
+        'testing_mps': [],
     }
     ''' Make a for loop where settings.test_mps changes in each loop for cross validation '''
     ''' Try to make it work with words included in the debates rather than just titles? '''
