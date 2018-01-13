@@ -1,4 +1,4 @@
-""" Parses the spam email dataset """
+""" Learns to detect spam using the spam email dataset """
 
 import collections
 import re
@@ -138,7 +138,7 @@ def generate_test_data(gen_file, spam_file, common_words, settings):
 
 
 def run():
-    """ If this has a green line I'll get annoyed """
+    """ Sets the settings and runs the program  """
 
     settings = {
         'black_list': [],
