@@ -2,21 +2,91 @@
 
 import collections
 import re
+import sqlite3
 
 from nltk import PorterStemmer, ngrams
 from nltk.corpus import stopwords
+from numpy import array_split
 from sklearn import svm
 
 
-def get_speeches(db_path, settings, training):
+def get_mps(settings, vote):
+    """ Returns a list of mp ids who voted a given way in a given division """
+    conn = sqlite3.connect(settings['db_path'])
+    curs = conn.cursor()
+
+    curs.execute('''SELECT ID FROM MEMBER
+                    INNER JOIN VOTE ON VOTE.MEMBER_ID = MEMBER.ID
+                    WHERE VOTE.DIVISION_ID=? AND VOTE.VOTE=?''', (settings['division_id'], vote))
+
+    rows = curs.fetchall()
+
+    return [row[0] for row in rows]
+
+
+def get_debates_from_term(db_path, term):
+    """ Returns a list of debate ids where the term is in the debate title """
+
+    conn = sqlite3.connect(db_path)
+    curs = conn.cursor()
+
+    curs.execute('''SELECT URL FROM DEBATE
+                    WHERE TITLE LIKE ? COLLATE NOCASE''', ('%{}%'.format(term),))
+
+    rows = curs.fetchall()
+
+    return [row[0] for row in rows]
+
+def get_debates(settings):
+    """ Returns a list of debate ids matching the given settings """
+
+    if settings['all_debates']:
+        conn = sqlite3.connect(settings['db_path'])
+        curs = conn.cursor()
+        curs.execute("SELECT URL FROM DEBATE")
+        rows = curs.fetchall()
+        ret = [row[0] for row in rows]
+    else:
+        debates = set()
+        for term in settings['debate_terms']:
+            debates = debates.union(set(get_debates_from_term(settings['db_path'], term)))
+        ret = list(debates)
+
+    return ret
+
+
+def get_speech_texts(db_path, member_id, debate):
+    """ Returns a list of strings of the speeches of a given MP in a given debate """
+    conn = sqlite3.connect(db_path)
+    curs = conn.cursor()
+
+    curs.execute('''SELECT QUOTE FROM SPEECH
+                    WHERE MEMBER_ID=? AND DEBATE_URL=?''', (member_id, debate))
+
+    rows = curs.fetchall()
+
+    return [row[0] for row in rows]
+
+def get_all_speech_texts(db_path, mp_list, debates):
+    """ Returns a list of strings of the speeches of given MPs in given debates """
+
+    speeches = []
+
+    for member_id in mp_list:
+        for debate in debates:
+            speeches = speeches + get_speech_texts(db_path, member_id, debate)
+
+    return speeches
+
+def get_speeches(settings, training):
     """ Returns all the speeches in the given database that match the given settings """
 
     """ speeches only contains speeches of MPs that voted in the division given in settings
         should only use MPs used for training
         speech['text'] is text
         speech['aye'] is a boolean giving how the mp voted"""
-    mp_aye_list = get_mps(db_path, settings['division_id'], 'AyeVote')
-    mp_no_list = get_mps(db_path, settings['division_id'], 'NoVote')
+    mp_aye_list = get_mps(settings, 'AyeVote')
+    mp_no_list = get_mps(settings, 'NoVote')
     for member in mp_aye_list:
         if training:
             if member in settings['testing_mps']:
@@ -37,8 +107,8 @@ def get_speeches(db_path, settings, training):
 
     debates = get_debates(settings)
 
-    aye_texts = get_speech_texts(mp_aye_list, debates)
-    no_texts = get_speech_texts(mp_no_list, debates)
+    aye_texts = get_all_speech_texts(settings['db_path'], mp_aye_list, debates)
+    no_texts = get_all_speech_texts(settings['db_path'], mp_no_list, debates)
 
     for aye_text in aye_texts:
         speeches.append({
@@ -55,9 +125,9 @@ def get_speeches(db_path, settings, training):
     return speeches
 
 
-def get_train_speeches(db_path, settings):
+def get_train_speeches(settings):
     """ Returns all the speeches in the given database that match the given settings """
-    return get_speeches(db_path, settings, True)
+    return get_speeches(settings, True)
 
 
 def remove_punctuation(body):
@@ -99,10 +169,10 @@ def generate_word_list(body, settings):
 
     return ngrams(word_list, settings['n_gram'])
 
-def parse_train_ems(db_path, settings):
+def parse_train_ems(settings):
     """ Parses a train ems file and creates the corresponding bags of words"""
 
-    speeches = get_train_speeches(db_path, settings)
+    speeches = get_train_speeches(settings)
 
     aye_bags = []
     no_bags = []
@@ -145,11 +215,11 @@ def generate_classifier_data(aye_bags, no_bags, common_words):
 
     return features, samples
 
-def generate_train_data(db_path, settings):
+def generate_train_data(settings):
     """ Returns the features and samples in a form that can be used
          by a classifier, given the filenames for the data """
 
-    aye_bags, no_bags, sum_bag = parse_train_ems(db_path, settings)
+    aye_bags, no_bags, sum_bag = parse_train_ems(settings)
 
     common_words = [word[0] for word in sum_bag.most_common(settings['bag_size'])]
 
@@ -158,15 +228,15 @@ def generate_train_data(db_path, settings):
     return features, samples, common_words
 
 
-def get_test_speeches(db_path, settings):
+def get_test_speeches(settings):
     """ Returns all the speeches in the given database that match the given settings """
-    return get_speeches(db_path, settings, False)
+    return get_speeches(settings, False)
 
 
-def parse_test_ems(db_path, settings):
+def parse_test_ems(settings):
     """ Parses a test ems file and creates the corresponding bags of words"""
 
-    speeches = get_test_speeches(db_path, settings)
+    speeches = get_test_speeches(settings)
 
     aye_bags = []
     no_bags = []
@@ -184,21 +254,49 @@ def parse_test_ems(db_path, settings):
 
     return aye_bags, no_bags
 
-def generate_test_data(db_path, common_words, settings):
+def generate_test_data(common_words, settings):
     """ Returns the features and samples in a form that can be used
          by a classifier, given the filenames for the data """
 
-    aye_bags, no_bags = parse_test_ems(db_path, settings)
+    aye_bags, no_bags = parse_test_ems(settings)
 
     features, samples = generate_classifier_data(aye_bags, no_bags, common_words)
 
     return features, samples
 
 
+def cross_validate(settings):
+    """ Runs one loop of the cross-validation """
+
+
+    train_features, train_samples, common_words = generate_train_data(settings)
+
+    test_features, test_samples = generate_test_data(common_words, settings)
+
+    classifier = svm.SVC()
+    ''' train_features is a list of word bags
+        train_samples is a list containing only 1s and -1s
+            (corresponding to the class ie an MP's vote) '''
+    classifier.fit(train_features, train_samples)
+    print('Score: {}'.format(classifier.score(test_features, test_samples)))
+    print(common_words)
+
+
+def get_mp_folds(settings):
+    """ Given the number of folds, returns that number of
+        non-overlapping lists (of equal/nearly equal length) of
+        ids of mps matching the given settings """
+
+    all_mps = get_mps(settings, 'AyeVote') + get_mps(settings, 'NoVote')
+
+    return [list(element) for element in array_split(all_mps, settings['no_of_folds'])]
+
+
 def run():
-    """ Sets the settings and runs the program  """
+    """ Sets the settings and runs the program """
 
     settings = {
+        'db_path': 'Data/Corpus/database.db',
         'black_list': [],
         'white_list': [],
         'bag_size': 100,
@@ -208,23 +306,15 @@ def run():
         'division_id': 102564,
         'all_debates': True,
         'debate_terms': [],
+        'no_of_folds': 10,
         'testing_mps': [],
     }
-    ''' Make a for loop where settings.test_mps changes in each loop for cross validation '''
-    ''' Try to make it work with words included in the debates rather than just titles? '''
 
-    train_features, train_samples, common_words = generate_train_data('Data/Corpus/database.db',
-                                                                      settings)
+    mp_lists = get_mp_folds(settings['no_of_folds'])
 
-    test_features, test_samples = generate_test_data('Data/Corpus/database.db',
-                                                     common_words, settings)
+    for mp_list in mp_lists:
+        settings['testing_mps'] = mp_list
+        cross_validate(settings)
 
-    classifier = svm.SVC()
-    ''' train_features is a list of word bags
-        train_samples is a list containing only 1s and -1s
-            (corresponding to the class ie an MP's vote) '''
-    classifier.fit(train_features, train_samples)
-    print('Score: {}'.format(classifier.score(test_features, test_samples)))
-    print(common_words)
 
 run()
