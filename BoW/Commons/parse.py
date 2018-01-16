@@ -8,6 +8,7 @@ from nltk import PorterStemmer, ngrams
 from nltk.corpus import stopwords
 from numpy import array_split
 from sklearn import svm
+from sklearn.metrics import f1_score
 
 
 def get_mps(settings, vote):
@@ -52,7 +53,7 @@ def get_debates(settings):
             debates = debates.union(set(get_debates_from_term(settings['db_path'], term)))
         ret = list(debates)
 
-    print('DEBATES: {}'.format(ret))
+    #print('DEBATES: {}'.format(ret))
 
     return ret
 
@@ -75,7 +76,7 @@ def get_all_speech_texts(db_path, mp_list, debates):
     speeches = []
 
     for member_id in mp_list:
-        print('MEMBER DONE: {}'.format(member_id))
+        #print('MEMBER DONE: {}'.format(member_id))
         for debate in debates:
             speeches = speeches + get_speech_texts(db_path, member_id, debate)
 
@@ -89,7 +90,7 @@ def get_speeches(settings, training):
     for member in mp_aye_list:
         if training:
             if member in settings['testing_mps']:
-                print('TESTING MP REMOVED: {}'.format(member))
+                #print('TESTING MP REMOVED: {}'.format(member))
                 mp_aye_list.remove(member)
         else:
             if member not in settings['testing_mps']:
@@ -98,7 +99,7 @@ def get_speeches(settings, training):
     for member in mp_no_list:
         if training:
             if member in settings['testing_mps']:
-                print('TESTING MP REMOVED: {}'.format(member))
+                #print('TESTING MP REMOVED: {}'.format(member))
                 mp_no_list.remove(member)
         else:
             if member not in settings['testing_mps']:
@@ -123,7 +124,7 @@ def get_speeches(settings, training):
             'aye': False
         })
 
-    print("NUM OF SPEECHES: {}".format(len(speeches)))
+    #print("NUM OF SPEECHES: {}".format(len(speeches)))
 
     return speeches
 
@@ -157,6 +158,16 @@ def stem_words(word_list):
     return [stemmer.stem(word) for word in word_list]
 
 
+def get_n_grams(word_list, gram_size):
+    """ Given a word list and some gram size, returns a list of all n grams for n <= gram_size """
+    if gram_size == 1:
+        ret = word_list
+    else:
+        ret = ngrams(word_list, gram_size) + get_n_grams(word_list, gram_size - 1)
+
+    return ret
+
+
 def generate_word_list(body, settings):
     """ Returns a list of words, given a message tag """
     body = remove_punctuation(body)
@@ -170,7 +181,7 @@ def generate_word_list(body, settings):
     if settings['stem_words']:
         word_list = stem_words(word_list)
 
-    return ngrams(word_list, settings['n_gram'])
+    return get_n_grams(word_list, settings['n_gram'])
 
 def parse_train_ems(settings):
     """ Parses a train ems file and creates the corresponding bags of words"""
@@ -206,10 +217,12 @@ def condense_bags(bags, words):
 def generate_classifier_data(aye_bags, no_bags, common_words):
     """ Returns the features and samples in a form that can be used
          by a classifier, given the bags and most common words in them """
+
     condensed_aye_bags = condense_bags(aye_bags, common_words)
     condensed_no_bags = condense_bags(no_bags, common_words)
     features = condensed_aye_bags + condensed_no_bags
     samples = []
+
     for _ in range(len(condensed_aye_bags)):
         samples.append(1)
 
@@ -226,7 +239,7 @@ def generate_train_data(settings):
 
     common_words = [word[0] for word in sum_bag.most_common(settings['bag_size'])]
 
-    print("COMMON WORDS: {}".format(common_words[:20]))
+    #print("COMMON WORDS: {}".format(common_words[:20]))
 
     features, samples = generate_classifier_data(aye_bags, no_bags, common_words)
 
@@ -283,7 +296,15 @@ def cross_validate(settings):
         train_samples is a list containing only 1s and -1s
             (corresponding to the class ie an MP's vote) '''
     classifier.fit(train_features, train_samples)
+
+    test_predictions = classifier.predict(test_features)
+    print('PREDICTIONS: {}'.format(test_predictions))
+
+    print('NUM OF PREDICTIONS: {}'.format(len(test_predictions)))
+
     print('SCORE: {}'.format(classifier.score(test_features, test_samples)))
+
+    print('F1 SCORE: {}'.format(f1_score(test_samples, test_predictions)))
 
 
 def get_mp_folds(settings):
@@ -317,7 +338,7 @@ def run():
     mp_lists = get_mp_folds(settings)
 
     for mp_list in mp_lists:
-        print('TEST MPs: {}'.format(mp_list))
+        #print('TEST MPs: {}'.format(mp_list))
         settings['testing_mps'] = mp_list
         cross_validate(settings)
 

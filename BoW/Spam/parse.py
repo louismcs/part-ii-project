@@ -38,6 +38,17 @@ def stem_words(word_list):
     stemmer = PorterStemmer()
     return [stemmer.stem(word) for word in word_list]
 
+
+def get_n_grams(word_list, gram_size):
+    """ Given a word list and some gram size, returns a list of all n grams for n <= gram_size """
+    if gram_size == 1:
+        ret = word_list
+    else:
+        ret = ngrams(word_list, gram_size) + get_n_grams(word_list, gram_size - 1)
+
+    return ret
+
+
 def generate_word_list(body, settings):
     """ Returns a list of words, given a message tag """
     body = remove_tags(body)
@@ -52,7 +63,7 @@ def generate_word_list(body, settings):
     if settings['stem_words']:
         word_list = stem_words(word_list)
 
-    return ngrams(word_list, settings['n_gram'])
+    return get_n_grams(word_list, settings['n_gram'])
 
 
 def get_messages(file):
