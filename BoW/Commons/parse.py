@@ -343,6 +343,7 @@ def run():
         'bag_size': 100,
         'remove_stopwords': True,
         'stem_words': False,
+        'group_numbers': True,
         'n_gram': 1,
         'division_id': 102564,
         'all_debates': False,
