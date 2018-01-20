@@ -158,6 +158,19 @@ def stem_words(word_list):
     return [stemmer.stem(word) for word in word_list]
 
 
+def replace_number(word):
+    """ Given a string, returns '&NUM' if it's a number and the input string otherwise """
+    if word.isdigit():
+        return '&NUM'
+    else:
+        return word
+
+
+def group_numbers(word_list):
+    """ Given a word list, returns the same word list with all numbers replaced with '&NUM' """
+    return [replace_number(word) for word in word_list]
+
+
 def get_n_grams(word_list, gram_size):
     """ Given a word list and some gram size, returns a list of all n grams for n <= gram_size """
     if gram_size == 1:
@@ -180,6 +193,9 @@ def generate_word_list(body, settings):
 
     if settings['stem_words']:
         word_list = stem_words(word_list)
+
+    if settings['group_numbers']:
+        word_list = group_numbers(word_list)
 
     return get_n_grams(word_list, settings['n_gram'])
 
