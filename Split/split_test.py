@@ -5,7 +5,7 @@ from random import shuffle
 
 
 def get_members_from_term(db_path, term, division_id):
-    """ Returns a list of debate ids where the term is in the debate title """
+    """ Returns a list of debate ids where the given term is in the debate title """
 
     conn = sqlite3.connect(db_path)
     curs = conn.cursor()

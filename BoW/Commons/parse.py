@@ -7,6 +7,7 @@ import sqlite3
 from nltk import PorterStemmer, ngrams
 from nltk.corpus import stopwords
 from numpy import array_split
+from scipy import stats
 from sklearn import svm
 from sklearn.metrics import f1_score
 
@@ -81,6 +82,7 @@ def get_all_speech_texts(db_path, mp_list, debates):
             speeches = speeches + get_speech_texts(db_path, member_id, debate)
 
     return speeches
+
 
 def get_speeches(settings, training):
     """ Returns all the speeches in the given database that match the given settings """
@@ -299,7 +301,7 @@ def generate_test_data(common_words, settings):
     return features, samples
 
 
-def cross_validate(settings):
+def compute_f1(settings, test_fold):
     """ Runs one loop of the cross-validation """
 
 
@@ -314,50 +316,59 @@ def cross_validate(settings):
     classifier.fit(train_features, train_samples)
 
     test_predictions = classifier.predict(test_features)
-    print('PREDICTIONS: {}'.format(test_predictions))
+
+    ''' print('PREDICTIONS: {}'.format(test_predictions))
 
     print('NUM OF PREDICTIONS: {}'.format(len(test_predictions)))
 
-    print('SCORE: {}'.format(classifier.score(test_features, test_samples)))
+    print('SCORE: {}'.format(classifier.score(test_features, test_samples))) '''
 
-    print('F1 SCORE: {}'.format(f1_score(test_samples, test_predictions)))
+    return f1_score(test_samples, test_predictions)
 
 
-def get_mp_folds(settings):
-    """ Given the number of folds, returns that number of
-        non-overlapping lists (of equal/nearly equal length) of
-        ids of mps matching the given settings """
 
-    all_mps = get_mps(settings, 'AyeVote') + get_mps(settings, 'NoVote')
 
-    return [list(element) for element in array_split(all_mps, settings['no_of_folds'])]
 
+def get_test_mps(file_path):
+    """ Returns a list of ids of MPs to be reserved for testing given the file path """
+
+    with open(file_path) as id_file:
+        ret = [line.rstrip() for line in id_file]
+
+    return ret
 
 def run():
     """ Sets the settings and runs the program """
+    division_id = 102564
+    test_mps = get_test_mps('test-ids_{}.txt'.format(division_id))
 
     settings = {
         'db_path': 'Data/Corpus/database.db',
         'black_list': [],
         'white_list': [],
         'bag_size': 100,
-        'remove_stopwords': True,
+        'remove_stopwords': False,
         'stem_words': False,
-        'group_numbers': True,
+        'group_numbers': False,
         'n_gram': 1,
-        'division_id': 102564,
+        'division_id': division_id,
         'all_debates': False,
-        'debate_terms': ['iraq'],
+        'debate_terms': ['iraq', 'terrorism', 'middle east', 'defence policy',
+                         'defence in the world', 'afghanistan'],
         'no_of_folds': 10,
-        'testing_mps': [],
+        'testing_mps': test_mps,
     }
 
-    mp_lists = get_mp_folds(settings)
-
-    for mp_list in mp_lists:
-        #print('TEST MPs: {}'.format(mp_list))
-        settings['testing_mps'] = mp_list
-        cross_validate(settings)
+    test_folds, train_folds = get_mp_folds(settings)
 
 
-run()
+    current_f1s = [cross_validate(settings, mp_fold) for mp_fold in mp_folds]
+    #Get 10 first f1 scores. Need to store the best f1 scores for future comparison.
+    #Then increase n, compute these f1 scores and compute t. Test significance. Iterate.
+
+
+
+    significant_change = True
+
+    while significant_change:
+        
