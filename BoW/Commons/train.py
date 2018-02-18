@@ -1,14 +1,18 @@
 import collections
 import math
+import pickle
 import re
 import sqlite3
 
 from nltk import PorterStemmer, ngrams
 from nltk.corpus import stopwords
 from numpy import array_split
+from random import shuffle
 from scipy import stats
 from sklearn import svm
+from sklearn.metrics import accuracy_score
 from sklearn.metrics import f1_score
+
 
 
 def get_debates_from_term(db_path, term):
@@ -103,7 +107,7 @@ def get_mp_folds(settings):
     aye_mps = get_mps(settings, 'AyeVote')
     no_mps = get_mps(settings, 'NoVote')
 
-    all_mps = [None] * (len(aye_mps) + len(no_mps))
+    all_mps = [{}] * (len(aye_mps) + len(no_mps))
 
     for i in range(len(aye_mps)):
         all_mps[i] = {
@@ -113,7 +117,7 @@ def get_mp_folds(settings):
 
     for i in range(len(no_mps)):
         all_mps[len(aye_mps) + i] = {
-            'vote': False,
+            'aye': False,
             'id': no_mps[i]
         }
 
@@ -122,14 +126,20 @@ def get_mp_folds(settings):
         if member['id'] in settings['testing_mps']:
             all_mps.remove(member)
 
+    shuffle(all_mps)
+
     test_folds = [list(element) for element in array_split(all_mps, settings['no_of_folds'])]
 
-    ret = [None] * settings['no_of_folds']
+    ret = [{}] * settings['no_of_folds']
 
     for i in range(settings['no_of_folds']):
+        train = all_mps
+        for member in train:
+            if member in test_folds[i]:
+                train.remove(member)
         ret[i] = {
             'test': test_folds[i],
-            'train': list(set(all_mps) - set(test_folds[i]))
+            'train': train
         }
 
     return ret
@@ -145,7 +155,7 @@ def get_speech_texts(db_path, member, debate):
 
     rows = curs.fetchall()
 
-    return [{'text': row[0], 'aye': member['aye']} for row in rows]
+    return [{'text': row[0], 'aye': member['aye'], 'member': member['id']} for row in rows]
 
 
 def get_speeches(db_path, mp_list, debates):
@@ -197,12 +207,19 @@ def group_numbers(word_list):
     return [replace_number(word) for word in word_list]
 
 
+def merge(n_gram):
+    ret = ''
+    for word in n_gram:
+        ret += '{} '.format(word)
+
+    return ret[:-1]
+    
 def get_n_grams(word_list, gram_size):
     """ Given a word list and some gram size, returns a list of all n grams for n <= gram_size """
     if gram_size == 1:
         ret = word_list
     else:
-        ret = ngrams(word_list, gram_size) + get_n_grams(word_list, gram_size - 1)
+        ret = [merge(el) for el in ngrams(word_list, gram_size)] + get_n_grams(word_list, gram_size - 1)
 
     return ret
 
@@ -234,6 +251,9 @@ def parse_ems(settings, mp_data):
     aye_bags = []
     no_bags = []
 
+    aye_members = []
+    no_members = []
+
     sum_bag = collections.Counter()
 
     for speech in speeches:
@@ -245,10 +265,20 @@ def parse_ems(settings, mp_data):
 
         if speech['aye']:
             aye_bags.append(bag)
+            aye_members.append(speech['member'])
         else:
             no_bags.append(bag)
+            no_members.append(speech['member'])
 
-    return aye_bags, no_bags, sum_bag
+    members = []
+
+    for member in aye_members:
+        members.append(member)
+
+    for member in no_members:
+        members.append(member)
+
+    return aye_bags, no_bags, sum_bag, members
 
 
 def condense_bags(bags, words):
@@ -279,7 +309,7 @@ def generate_train_data(settings, mp_list):
     """ Returns the features and samples in a form that can be used
          by a classifier, given the filenames for the data """
 
-    aye_bags, no_bags, sum_bag = parse_ems(settings, mp_list)
+    aye_bags, no_bags, sum_bag, _ = parse_ems(settings, mp_list)
 
     common_words = [word[0] for word in sum_bag.most_common(settings['bag_size'])]
 
@@ -292,20 +322,28 @@ def generate_test_data(common_words, settings, mp_list):
     """ Returns the features and samples in a form that can be used
          by a classifier, given the filenames for the data """
 
-    aye_bags, no_bags, _ = parse_ems(settings, mp_list)
+    aye_bags, no_bags, _, members = parse_ems(settings, mp_list)
 
     features, samples = generate_classifier_data(aye_bags, no_bags, common_words)
 
-    return features, samples
+    return features, samples, members
+
+
+def count_ayes(speeches):
+    ret = 0
+    for speech in speeches:
+        if speech['prediction'] == 1:
+            ret += 1
+
+    return ret
 
 
 def compute_f1(settings, data):
     """ Runs one loop of the cross-validation """
 
-
     train_features, train_samples, common_words = generate_train_data(settings, data['train'])
 
-    test_features, test_samples = generate_test_data(common_words, settings, data['test'])
+    test_features, test_samples, _ = generate_test_data(common_words, settings, data['test'])
 
     classifier = svm.SVC()
     ''' train_features is a list of word bags
@@ -314,6 +352,62 @@ def compute_f1(settings, data):
     classifier.fit(train_features, train_samples)
 
     test_predictions = classifier.predict(test_features)
+
+    return f1_score(test_samples, test_predictions)
+
+
+def compute_member_f1s(settings, data):
+    """ Runs one loop of the cross-validation """
+
+    train_features, train_samples, common_words = generate_train_data(settings, data['train'])
+
+    pickle.dump(train_features, open("train_features.p", "wb"))
+
+    pickle.dump(train_samples, open("train_samples.p", "wb"))
+
+    test_features, test_samples, members = generate_test_data(common_words, settings, data['test'])
+
+    classifier = svm.SVC()
+    ''' train_features is a list of word bags
+        train_samples is a list containing only 1s and -1s
+            (corresponding to the class ie an MP's vote) '''
+    classifier.fit(train_features, train_samples)
+
+    test_predictions = classifier.predict(test_features)
+
+    grouped_speeches = {}
+
+    for member_id in settings['testing_mps']:
+        grouped_speeches[member_id] = {
+            'speeches': [],
+            'vote': test_samples[members.index(member_id)]
+        }
+
+    for i in range(len(members)):
+        grouped_speeches[members[i]]['speeches'].append({
+            'feature': test_features[i],
+            'prediction': test_predictions[i]
+        })
+
+    member_votes = []
+
+    member_predictions = []
+
+    for member in grouped_speeches:
+        member['aye_fraction'] = count_ayes(member['speeches']) / len(member['speeches'])
+        member['overall_prediction'] = 1 if member['aye_fraction'] > 0.5 else -1
+        member_votes.append(member['vote'])
+        member_predictions.append(member['overall_prediction'])
+
+    print(grouped_speeches)
+
+    pickle.dump(grouped_speeches, open("grouped_speeches.p", "wb"))
+
+    print('Accuracy by MP: {}%'.format(accuracy_score(member_votes, member_predictions)))
+    print('F1 by MP: {}%'.format(f1_score(member_votes, member_predictions)))
+
+    print('Accuracy by speech: {}%'.format(accuracy_score(test_samples, test_predictions)))
+    print('F1 by speech: {}%'.format(f1_score(test_samples, test_predictions)))
 
     return f1_score(test_samples, test_predictions)
 
@@ -367,16 +461,26 @@ def learn_settings(settings, mp_folds):
 
     current_f1s = [compute_f1(settings, mp_fold) for mp_fold in mp_folds]
 
+    print(current_f1s)
+
     test_t = stats.t.ppf(0.75, 9)
 
     current_f1s = change_n_gram(settings, 1, current_f1s, test_t, mp_folds)
 
+    print(current_f1s)
+
     current_f1s = choose_boolean_setting(settings, 'remove_stopwords', current_f1s, test_t,
                                          mp_folds)
 
+    print(current_f1s)
+
     current_f1s = choose_boolean_setting(settings, 'stem_words', current_f1s, test_t, mp_folds)
 
+    print(current_f1s)
+
     current_f1s = choose_boolean_setting(settings, 'group_numbers', current_f1s, test_t, mp_folds)
+
+    print(current_f1s)
 
     settings['n_gram'] -= 1
     lower_n_f1s = [compute_f1(settings, mp_fold) for mp_fold in mp_folds]
@@ -394,6 +498,17 @@ def learn_settings(settings, mp_folds):
         if lower_n_t > test_t:
             settings['n_gram'] -= 2
             current_f1s = change_n_gram(settings, -1, lower_n_f1s, test_t, mp_folds)
+
+
+def is_aye_vote(db_path, division_id, member_id):
+
+    conn = sqlite3.connect(db_path)
+    curs = conn.cursor()
+
+    curs.execute('''SELECT VOTE FROM VOTE WHERE MEMBER_ID=? AND DIVISION_ID=? ''',
+                 (member_id, division_id))
+
+    return curs.fetchone()[0] == 'AyeVote'
 
 
 def run():
@@ -423,3 +538,41 @@ def run():
     mp_folds = get_mp_folds(settings)
 
     learn_settings(settings, mp_folds)
+
+    print(settings)
+
+    pickle.dump(settings, open("settings.p", "wb"))
+
+    train_data = mp_folds[0]['test'] + mp_folds[0]['train']
+
+    test_data = [{'id': member_id,
+                  'aye': is_aye_vote(settings['db_path'], settings['division_id'], member_id)}
+                 for member_id in settings['testing_mps']]
+
+    data = {
+        'train': train_data,
+        'test': test_data
+    }
+
+    compute_member_f1s(settings, data)
+
+#run()
+
+setting = {
+        'db_path': 'Data/Corpus/database.db',
+        'black_list': [],
+        'white_list': [],
+        'bag_size': 100,
+        'remove_stopwords': False,
+        'stem_words': False,
+        'group_numbers': False,
+        'n_gram': 1,
+        'division_id': 102564,
+        'all_debates': False,
+        'debate_terms': ['iraq', 'terrorism', 'middle east', 'defence policy',
+                         'defence in the world', 'afghanistan'],
+        'no_of_folds': 10,
+
+    }
+
+run()
