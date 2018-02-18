@@ -1,16 +1,47 @@
+import collections
+import math
+import re
 import sqlite3
 
-from scikit-learn import ai
-
-ai.learn(X, y, speechData)
-al.predict("Hey google turn the lamp off")
-ai.gatherInvestment()
-print(ai.getCurrentInvestment())
-
-from machine_learning import blockchain
-
-blockchain.do_computer_vision()
+from nltk import PorterStemmer, ngrams
+from nltk.corpus import stopwords
 from numpy import array_split
+from scipy import stats
+from sklearn import svm
+from sklearn.metrics import f1_score
+
+
+def get_debates_from_term(db_path, term):
+    """ Returns a list of debate ids where the term is in the debate title """
+
+    conn = sqlite3.connect(db_path)
+    curs = conn.cursor()
+
+    curs.execute('''SELECT URL FROM DEBATE
+                    WHERE TITLE LIKE ? COLLATE NOCASE''', ('%{}%'.format(term),))
+
+    rows = curs.fetchall()
+
+    return [row[0] for row in rows]
+
+
+def get_debates(settings):
+    """ Returns a list of debate ids matching the given settings """
+
+    if settings['all_debates']:
+        conn = sqlite3.connect(settings['db_path'])
+        curs = conn.cursor()
+        curs.execute("SELECT URL FROM DEBATE")
+        rows = curs.fetchall()
+        ret = [row[0] for row in rows]
+    else:
+        debates = set()
+        for term in settings['debate_terms']:
+            debates = debates.union(set(get_debates_from_term(settings['db_path'], term)))
+        ret = list(debates)
+
+    return ret
+
 
 def get_test_mps(file_path):
     """ Returns a list of ids of MPs to be reserved for testing given the file path """
@@ -76,20 +107,20 @@ def get_mp_folds(settings):
 
     for i in range(len(aye_mps)):
         all_mps[i] = {
-            'vote': 'AyeVote',
+            'aye': True,
             'id': aye_mps[i]
         }
 
     for i in range(len(no_mps)):
         all_mps[len(aye_mps) + i] = {
-            'vote': 'NoVote',
+            'vote': False,
             'id': no_mps[i]
         }
 
 
-    for mp in all_mps:
-        if mp['id'] in settings['testing_mps']:
-            all_mps.remove(mp)
+    for member in all_mps:
+        if member['id'] in settings['testing_mps']:
+            all_mps.remove(member)
 
     test_folds = [list(element) for element in array_split(all_mps, settings['no_of_folds'])]
 
@@ -104,62 +135,101 @@ def get_mp_folds(settings):
     return ret
 
 
-def get_speeches(settings, training):
+def get_speech_texts(db_path, member, debate):
+    """ Returns a list of strings of the speeches of a given MP in a given debate """
+    conn = sqlite3.connect(db_path)
+    curs = conn.cursor()
+
+    curs.execute('''SELECT QUOTE FROM SPEECH
+                    WHERE MEMBER_ID=? AND DEBATE_URL=?''', (member['id'], debate))
+
+    rows = curs.fetchall()
+
+    return [{'text': row[0], 'aye': member['aye']} for row in rows]
+
+
+def get_speeches(db_path, mp_list, debates):
     """ Returns all the speeches in the given database that match the given settings """
-
-    mp_aye_list = get_mps(settings, 'AyeVote')
-    mp_no_list = get_mps(settings, 'NoVote')
-    for member in mp_aye_list:
-        if training:
-            if member in settings['testing_mps']:
-                #print('TESTING MP REMOVED: {}'.format(member))
-                mp_aye_list.remove(member)
-        else:
-            if member not in settings['testing_mps']:
-                mp_aye_list.remove(member)
-
-    for member in mp_no_list:
-        if training:
-            if member in settings['testing_mps']:
-                #print('TESTING MP REMOVED: {}'.format(member))
-                mp_no_list.remove(member)
-        else:
-            if member not in settings['testing_mps']:
-                mp_no_list.remove(member)
 
     speeches = []
 
-    debates = get_debates(settings)
-
-    aye_texts = get_all_speech_texts(settings['db_path'], mp_aye_list, debates)
-    no_texts = get_all_speech_texts(settings['db_path'], mp_no_list, debates)
-
-    for aye_text in aye_texts:
-        speeches.append({
-            'text': aye_text,
-            'aye': True
-        })
-
-    for no_text in no_texts:
-        speeches.append({
-            'text': no_text,
-            'aye': False
-        })
-
-    #print("NUM OF SPEECHES: {}".format(len(speeches)))
+    for member in mp_list:
+        for debate in debates:
+            speeches = speeches + get_speech_texts(db_path, member, debate)
 
     return speeches
 
 
-def get_train_speeches(settings):
-    """ Returns all the speeches in the given database that match the given settings """
-    return get_speeches(settings, True)
+def remove_punctuation(body):
+    """ Removes punctuation from a given string """
+    body = body.replace("\n", " ")
+    body = re.sub(r"[^\w\d\s#'-]", '', body)
+    body = body.replace(" '", " ")
+    body = body.replace("' ", " ")
+    body = body.replace(" -", " ")
+    body = body.replace("- ", " ")
+    return body
 
 
-def parse_train_ems(settings, train_data):
+def remove_stopwords(word_list, black_list, white_list):
+    """ Returns a list of words (with stop words removed), given a word list """
+    stop = set(stopwords.words('english'))
+    return [word for word in word_list
+            if (word in white_list) or ((word not in stop) and (word not in black_list))]
+
+
+def stem_words(word_list):
+    """ Uses PorterStemmer to stem words in word_list argument """
+    stemmer = PorterStemmer()
+    return [stemmer.stem(word) for word in word_list]
+
+
+def replace_number(word):
+    """ Given a string, returns '&NUM' if it's a number and the input string otherwise """
+    if word.isdigit():
+        return '&NUM'
+    else:
+        return word
+
+
+def group_numbers(word_list):
+    """ Given a word list, returns the same word list with all numbers replaced with '&NUM' """
+    return [replace_number(word) for word in word_list]
+
+
+def get_n_grams(word_list, gram_size):
+    """ Given a word list and some gram size, returns a list of all n grams for n <= gram_size """
+    if gram_size == 1:
+        ret = word_list
+    else:
+        ret = ngrams(word_list, gram_size) + get_n_grams(word_list, gram_size - 1)
+
+    return ret
+
+
+def generate_word_list(body, settings):
+    """ Returns a list of words, given a message tag """
+    body = remove_punctuation(body)
+    body = body.lower()
+
+    word_list = body.split()
+
+    if settings['remove_stopwords']:
+        word_list = remove_stopwords(word_list, settings['black_list'], settings['white_list'])
+
+    if settings['stem_words']:
+        word_list = stem_words(word_list)
+
+    if settings['group_numbers']:
+        word_list = group_numbers(word_list)
+
+    return get_n_grams(word_list, settings['n_gram'])
+
+
+def parse_ems(settings, mp_data):
     """ Parses a train ems file and creates the corresponding bags of words"""
 
-    speeches = get_train_speeches(settings, train_data)
+    speeches = get_speeches(settings['db_path'], mp_data, settings['debates'])
 
     aye_bags = []
     no_bags = []
@@ -181,17 +251,52 @@ def parse_train_ems(settings, train_data):
     return aye_bags, no_bags, sum_bag
 
 
-def generate_train_data(settings, train_data):
+def condense_bags(bags, words):
+    """ Returns an array of integer arrays containing the counts of the words
+         (in the array provided) and an array of the Counter bags """
+    return [[bag[word] for word in words] for bag in bags]
+
+
+def generate_classifier_data(aye_bags, no_bags, common_words):
+    """ Returns the features and samples in a form that can be used
+         by a classifier, given the bags and most common words in them """
+
+    condensed_aye_bags = condense_bags(aye_bags, common_words)
+    condensed_no_bags = condense_bags(no_bags, common_words)
+    features = condensed_aye_bags + condensed_no_bags
+    samples = []
+
+    for _ in range(len(condensed_aye_bags)):
+        samples.append(1)
+
+    for _ in range(len(condensed_no_bags)):
+        samples.append(-1)
+
+    return features, samples
+
+
+def generate_train_data(settings, mp_list):
     """ Returns the features and samples in a form that can be used
          by a classifier, given the filenames for the data """
 
-    aye_bags, no_bags, sum_bag = parse_train_ems(settings, train_data)
+    aye_bags, no_bags, sum_bag = parse_ems(settings, mp_list)
 
     common_words = [word[0] for word in sum_bag.most_common(settings['bag_size'])]
 
     features, samples = generate_classifier_data(aye_bags, no_bags, common_words)
 
     return features, samples, common_words
+
+
+def generate_test_data(common_words, settings, mp_list):
+    """ Returns the features and samples in a form that can be used
+         by a classifier, given the filenames for the data """
+
+    aye_bags, no_bags, _ = parse_ems(settings, mp_list)
+
+    features, samples = generate_classifier_data(aye_bags, no_bags, common_words)
+
+    return features, samples
 
 
 def compute_f1(settings, data):
@@ -211,6 +316,84 @@ def compute_f1(settings, data):
     test_predictions = classifier.predict(test_features)
 
     return f1_score(test_samples, test_predictions)
+
+
+def compute_t(differences):
+    mean = sum(differences) / len(differences)
+
+    squared_diff = 0
+
+    for difference in differences:
+        squared_diff += pow(difference - mean, 2)
+
+    variance = squared_diff / (len(differences) - 1)
+
+    return mean / (math.sqrt(variance / len(differences)))
+
+
+def change_n_gram(settings, increment, current_f1s, test_t, mp_folds):
+
+    significant_change = True
+
+    while significant_change:
+        settings['n_gram'] += increment
+        new_f1s = [compute_f1(settings, mp_fold) for mp_fold in mp_folds]
+        t_value = compute_t([new_f1s[i] - current_f1s[i] for i in range(settings['no_of_folds'])])
+
+        if t_value > test_t:
+            current_f1s = new_f1s
+        else:
+            significant_change = False
+            settings['n_gram'] -= increment
+
+    return current_f1s
+
+
+def choose_boolean_setting(settings, setting, current_f1s, test_t, mp_folds):
+
+    settings[setting] = True
+    new_f1s = [compute_f1(settings, mp_fold) for mp_fold in mp_folds]
+    t_value = compute_t([new_f1s[i] - current_f1s[i] for i in range(settings['no_of_folds'])])
+
+    if t_value > test_t:
+        current_f1s = new_f1s
+    else:
+        settings[setting] = False
+
+    return current_f1s
+
+
+def learn_settings(settings, mp_folds):
+
+    current_f1s = [compute_f1(settings, mp_fold) for mp_fold in mp_folds]
+
+    test_t = stats.t.ppf(0.75, 9)
+
+    current_f1s = change_n_gram(settings, 1, current_f1s, test_t, mp_folds)
+
+    current_f1s = choose_boolean_setting(settings, 'remove_stopwords', current_f1s, test_t,
+                                         mp_folds)
+
+    current_f1s = choose_boolean_setting(settings, 'stem_words', current_f1s, test_t, mp_folds)
+
+    current_f1s = choose_boolean_setting(settings, 'group_numbers', current_f1s, test_t, mp_folds)
+
+    settings['n_gram'] -= 1
+    lower_n_f1s = [compute_f1(settings, mp_fold) for mp_fold in mp_folds]
+    lower_n_t = compute_t([lower_n_f1s[i] - current_f1s[i] for i in range(settings['no_of_folds'])])
+
+    settings['n_gram'] += 2
+    higher_n_f1s = [compute_f1(settings, mp_fold) for mp_fold in mp_folds]
+    higher_n_t = compute_t([higher_n_f1s[i] - current_f1s[i]
+                            for i in range(settings['no_of_folds'])])
+
+    if higher_n_t > lower_n_t:
+        if higher_n_t > test_t:
+            current_f1s = change_n_gram(settings, 1, higher_n_f1s, test_t, mp_folds)
+    else:
+        if lower_n_t > test_t:
+            settings['n_gram'] -= 2
+            current_f1s = change_n_gram(settings, -1, lower_n_f1s, test_t, mp_folds)
 
 
 def run():
@@ -233,12 +416,10 @@ def run():
 
     }
 
-    mp_list = get_member_ids(settings['db_path'], settings['debate_terms'], settings['division_id'])
+    settings['debates'] = get_debates(settings)
 
     settings['testing_mps'] = get_test_mps('test-ids_{}.txt'.format(settings['division_id']))
 
     mp_folds = get_mp_folds(settings)
 
-    current_f1s = [compute_f1(settings, mp_fold) for mp_fold in mp_folds]
-    #Get 10 first f1 scores. Need to store the best f1 scores for future comparison.
-    #Then increase n, compute these f1 scores and compute t. Test significance. Iterate.
+    learn_settings(settings, mp_folds)
