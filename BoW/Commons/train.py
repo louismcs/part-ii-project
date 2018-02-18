@@ -7,6 +7,7 @@ import sqlite3
 from nltk import PorterStemmer, ngrams
 from nltk.corpus import stopwords
 from numpy import array_split
+from numpy import mean
 from random import shuffle
 from scipy import stats
 from sklearn import svm
@@ -425,16 +426,18 @@ def compute_t(differences):
     return mean / (math.sqrt(variance / len(differences)))
 
 
-def change_n_gram(settings, increment, current_f1s, test_t, mp_folds):
+def change_n_gram(settings, increment, current_f1s, mp_folds):
 
     significant_change = True
 
     while significant_change:
         settings['n_gram'] += increment
         new_f1s = [compute_f1(settings, mp_fold) for mp_fold in mp_folds]
-        t_value = compute_t([new_f1s[i] - current_f1s[i] for i in range(settings['no_of_folds'])])
+        
+        current_mean = mean(current_f1s)
+        new_mean = mean(new_f1s)
 
-        if t_value > test_t:
+        if new_mean > current_mean:
             current_f1s = new_f1s
         else:
             significant_change = False
@@ -443,13 +446,15 @@ def change_n_gram(settings, increment, current_f1s, test_t, mp_folds):
     return current_f1s
 
 
-def choose_boolean_setting(settings, setting, current_f1s, test_t, mp_folds):
+def choose_boolean_setting(settings, setting, current_f1s, mp_folds):
 
     settings[setting] = True
     new_f1s = [compute_f1(settings, mp_fold) for mp_fold in mp_folds]
-    t_value = compute_t([new_f1s[i] - current_f1s[i] for i in range(settings['no_of_folds'])])
 
-    if t_value > test_t:
+    current_mean = mean(current_f1s)
+    new_mean = mean(new_f1s)
+
+    if new_mean > current_mean:
         current_f1s = new_f1s
     else:
         settings[setting] = False
@@ -463,41 +468,39 @@ def learn_settings(settings, mp_folds):
 
     print(current_f1s)
 
-    test_t = stats.t.ppf(0.75, 9)
-
-    current_f1s = change_n_gram(settings, 1, current_f1s, test_t, mp_folds)
+    current_f1s = change_n_gram(settings, 1, current_f1s, mp_folds)
 
     print(current_f1s)
 
-    current_f1s = choose_boolean_setting(settings, 'remove_stopwords', current_f1s, test_t,
-                                         mp_folds)
+    current_f1s = choose_boolean_setting(settings, 'remove_stopwords', current_f1s, mp_folds)
 
     print(current_f1s)
 
-    current_f1s = choose_boolean_setting(settings, 'stem_words', current_f1s, test_t, mp_folds)
+    current_f1s = choose_boolean_setting(settings, 'stem_words', current_f1s, mp_folds)
 
     print(current_f1s)
 
-    current_f1s = choose_boolean_setting(settings, 'group_numbers', current_f1s, test_t, mp_folds)
+    current_f1s = choose_boolean_setting(settings, 'group_numbers', current_f1s, mp_folds)
 
     print(current_f1s)
+
+    current_mean = mean(current_f1s)
 
     settings['n_gram'] -= 1
     lower_n_f1s = [compute_f1(settings, mp_fold) for mp_fold in mp_folds]
-    lower_n_t = compute_t([lower_n_f1s[i] - current_f1s[i] for i in range(settings['no_of_folds'])])
+    lower_n_mean = mean(lower_n_f1s)
 
     settings['n_gram'] += 2
     higher_n_f1s = [compute_f1(settings, mp_fold) for mp_fold in mp_folds]
-    higher_n_t = compute_t([higher_n_f1s[i] - current_f1s[i]
-                            for i in range(settings['no_of_folds'])])
+    higher_n_mean = mean(higher_n_f1s)
 
-    if higher_n_t > lower_n_t:
-        if higher_n_t > test_t:
-            current_f1s = change_n_gram(settings, 1, higher_n_f1s, test_t, mp_folds)
+    if higher_n_mean > lower_n_mean:
+        if higher_n_mean > current_mean:
+            current_f1s = change_n_gram(settings, 1, higher_n_f1s, mp_folds)
     else:
-        if lower_n_t > test_t:
+        if lower_n_mean > current_mean:
             settings['n_gram'] -= 2
-            current_f1s = change_n_gram(settings, -1, lower_n_f1s, test_t, mp_folds)
+            current_f1s = change_n_gram(settings, -1, lower_n_f1s, mp_folds)
 
 
 def is_aye_vote(db_path, division_id, member_id):
