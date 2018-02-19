@@ -159,16 +159,26 @@ def get_speech_texts(db_path, member, debate):
     return [{'text': row[0], 'aye': member['aye'], 'member': member['id']} for row in rows]
 
 
-def get_speeches(db_path, mp_list, debates):
+def get_speeches(db_path, member_list, debates):
     """ Returns all the speeches in the given database that match the given settings """
 
-    speeches = []
-
-    for member in mp_list:
+    speeches = {}
+    for member in member_list:
+        print(member['id'])
+        speeches[member['id']] = []
         for debate in debates:
-            speeches = speeches + get_speech_texts(db_path, member, debate)
+            speeches[member['id']] += get_speech_texts(db_path, member, debate)
 
     return speeches
+
+def fetch_speeches(speeches, mp_data):
+
+    ret = []
+
+    for member in mp_data:
+        ret += speeches[member['id']]
+
+    return ret
 
 
 def remove_punctuation(body):
@@ -247,7 +257,7 @@ def generate_word_list(body, settings):
 def parse_ems(settings, mp_data):
     """ Parses a train ems file and creates the corresponding bags of words"""
 
-    speeches = get_speeches(settings['db_path'], mp_data, settings['debates'])
+    speeches = fetch_speeches(settings['speeches'], mp_data)
 
     aye_bags = []
     no_bags = []
@@ -311,8 +321,13 @@ def generate_train_data(settings, mp_list):
          by a classifier, given the filenames for the data """
 
     aye_bags, no_bags, sum_bag, _ = parse_ems(settings, mp_list)
-
-    common_words = [word[0] for word in sum_bag.most_common(settings['bag_size'])]
+    if settings['max_bag_size']:
+        common_words = [word[0] for word in sum_bag.most_common(settings['bag_size'])]
+    else:
+        common_words = []
+        for term in sum_bag:
+            if sum_bag[term] > 1:
+                common_words.append(term)
 
     features, samples = generate_classifier_data(aye_bags, no_bags, common_words)
 
@@ -428,17 +443,23 @@ def compute_t(differences):
 
 def change_n_gram(settings, increment, current_f1s, mp_folds):
 
-    significant_change = True
+    if settings['n_gram'] > 9 or settings['n_gram'] < 2:
+        significant_change = False
+    else:
+        significant_change = True
 
     while significant_change:
         settings['n_gram'] += increment
         new_f1s = [compute_f1(settings, mp_fold) for mp_fold in mp_folds]
-        
+
         current_mean = mean(current_f1s)
         new_mean = mean(new_f1s)
 
+        print('New mean for n = {} is {}'.format(settings['n_gram'], new_mean))
         if new_mean > current_mean:
             current_f1s = new_f1s
+            if settings['n_gram'] == 10 or settings['n_gram'] == 1:
+                significant_change = False
         else:
             significant_change = False
             settings['n_gram'] -= increment
@@ -486,13 +507,19 @@ def learn_settings(settings, mp_folds):
 
     current_mean = mean(current_f1s)
 
-    settings['n_gram'] -= 1
-    lower_n_f1s = [compute_f1(settings, mp_fold) for mp_fold in mp_folds]
-    lower_n_mean = mean(lower_n_f1s)
+    if settings['n_gram'] > 1:
+        settings['n_gram'] -= 1
+        lower_n_f1s = [compute_f1(settings, mp_fold) for mp_fold in mp_folds]
+        lower_n_mean = mean(lower_n_f1s)
+    else:
+        lower_n_mean = 0
 
-    settings['n_gram'] += 2
-    higher_n_f1s = [compute_f1(settings, mp_fold) for mp_fold in mp_folds]
-    higher_n_mean = mean(higher_n_f1s)
+    if settings['n_gram'] < 10:
+        settings['n_gram'] += 2
+        higher_n_f1s = [compute_f1(settings, mp_fold) for mp_fold in mp_folds]
+        higher_n_mean = mean(higher_n_f1s)
+    else:
+        higher_n_mean = 0
 
     if higher_n_mean > lower_n_mean:
         if higher_n_mean > current_mean:
@@ -522,6 +549,7 @@ def run():
         'black_list': [],
         'white_list': [],
         'bag_size': 100,
+        'max_bag_size': False,
         'remove_stopwords': False,
         'stem_words': False,
         'group_numbers': False,
@@ -540,17 +568,27 @@ def run():
 
     mp_folds = get_mp_folds(settings)
 
-    learn_settings(settings, mp_folds)
-
-    print(settings)
-
-    pickle.dump(settings, open("settings.p", "wb"))
-
     train_data = mp_folds[0]['test'] + mp_folds[0]['train']
 
     test_data = [{'id': member_id,
                   'aye': is_aye_vote(settings['db_path'], settings['division_id'], member_id)}
                  for member_id in settings['testing_mps']]
+
+    member_data = train_data + test_data
+
+    print('Length: {}'.format(len(member_data)))
+    settings['speeches'] = get_speeches(settings['db_path'], member_data, settings['debates'])
+
+    print('Got speeches')
+
+    learn_settings(settings, mp_folds)
+
+    print('N-gram: {}'.format(settings['n_gram']))
+    print('Remove stopwords: {}'.format(settings['remove_stopwords']))
+    print('Stem words: {}'.format(settings['stem_words']))
+    print('Group numbers: {}'.format(settings['group_numbers']))
+
+    pickle.dump(settings, open("settings.p", "wb"))
 
     data = {
         'train': train_data,
@@ -558,24 +596,5 @@ def run():
     }
 
     compute_member_f1s(settings, data)
-
-#run()
-
-setting = {
-        'db_path': 'Data/Corpus/database.db',
-        'black_list': [],
-        'white_list': [],
-        'bag_size': 100,
-        'remove_stopwords': False,
-        'stem_words': False,
-        'group_numbers': False,
-        'n_gram': 1,
-        'division_id': 102564,
-        'all_debates': False,
-        'debate_terms': ['iraq', 'terrorism', 'middle east', 'defence policy',
-                         'defence in the world', 'afghanistan'],
-        'no_of_folds': 10,
-
-    }
 
 run()
