@@ -1,10 +1,10 @@
 import collections
 import math
-import pickle
 import re
 import sqlite3
 
-from nltk import PorterStemmer, ngrams
+from nltk import ngrams
+from nltk import PorterStemmer
 from nltk.corpus import stopwords
 from numpy import array_split
 from numpy import mean
@@ -56,7 +56,7 @@ def get_test_mps(file_path):
 
     return ret
 
-def get_members_from_term(db_path, term, division_id):
+def get_all_members_from_term(db_path, term, division_id):
     """ Returns a list of debate ids where the given term is in the debate title """
 
     conn = sqlite3.connect(db_path)
@@ -76,12 +76,69 @@ def get_members_from_term(db_path, term, division_id):
     return [row[0] for row in rows]
 
 
-def get_member_ids(db_path, debate_terms, division_id):
-    """ Given a list of terms, finds all the debates whose titles contain one or more of these terms and returns their ids """
+def get_aye_members_from_term(db_path, term, division_id):
+    """ Returns a list of debate ids where the given term is in the debate title """
+
+    conn = sqlite3.connect(db_path)
+    curs = conn.cursor()
+
+    curs.execute('''SELECT DISTINCT MEMBER_ID FROM SPEECH
+                        WHERE DEBATE_URL IN (SELECT URL FROM DEBATE
+                                             WHERE TITLE LIKE ? COLLATE NOCASE)
+                        AND MEMBER_ID IN (SELECT ID FROM MEMBER INNER JOIN VOTE ON
+                                          VOTE.MEMBER_ID = MEMBER.ID
+                                          WHERE VOTE.DIVISION_ID=? AND
+                                          (VOTE.VOTE='AyeVote')) ''',
+                 ('%{}%'.format(term), division_id))
+
+    rows = curs.fetchall()
+
+    return [row[0] for row in rows]
+
+
+def get_no_members_from_term(db_path, term, division_id):
+    """ Returns a list of debate ids where the given term is in the debate title """
+
+    conn = sqlite3.connect(db_path)
+    curs = conn.cursor()
+
+    curs.execute('''SELECT DISTINCT MEMBER_ID FROM SPEECH
+                        WHERE DEBATE_URL IN (SELECT URL FROM DEBATE
+                                             WHERE TITLE LIKE ? COLLATE NOCASE)
+                        AND MEMBER_ID IN (SELECT ID FROM MEMBER INNER JOIN VOTE ON
+                                          VOTE.MEMBER_ID = MEMBER.ID
+                                          WHERE VOTE.DIVISION_ID=? AND
+                                          (VOTE.VOTE='NoVote')) ''',
+                 ('%{}%'.format(term), division_id))
+
+    rows = curs.fetchall()
+
+    return [row[0] for row in rows]
+
+
+def get_all_member_ids(db_path, debate_terms, division_id):
 
     debates = set()
     for term in debate_terms:
-        debates = debates.union(set(get_members_from_term(db_path, term, division_id)))
+        debates = debates.union(set(get_all_members_from_term(db_path, term, division_id)))
+
+    return list(debates)
+
+
+def get_aye_member_ids(db_path, debate_terms, division_id):
+    
+    debates = set()
+    for term in debate_terms:
+        debates = debates.union(set(get_aye_members_from_term(db_path, term, division_id)))
+
+    return list(debates)
+
+
+def get_no_member_ids(db_path, debate_terms, division_id):
+    
+    debates = set()
+    for term in debate_terms:
+        debates = debates.union(set(get_no_members_from_term(db_path, term, division_id)))
 
     return list(debates)
 
@@ -105,43 +162,39 @@ def get_mp_folds(settings):
         non-overlapping lists (of equal/nearly equal length) of
         ids of mps matching the given settings """
 
-    aye_mps = get_mps(settings, 'AyeVote')
-    no_mps = get_mps(settings, 'NoVote')
+    aye_mps = get_aye_member_ids(settings['db_path'], settings['debate_terms'],
+                                 settings['division_id'])
+    no_mps = get_no_member_ids(settings['db_path'], settings['debate_terms'],
+                               settings['division_id'])
 
-    all_mps = [{}] * (len(aye_mps) + len(no_mps))
+    all_mps = []
 
-    for i in range(len(aye_mps)):
-        all_mps[i] = {
-            'aye': True,
-            'id': aye_mps[i]
-        }
+    for member in aye_mps:
+        if member not in settings['testing_mps']:
+            all_mps.append({
+                'aye': True,
+                'id': member
+            })
 
-    for i in range(len(no_mps)):
-        all_mps[len(aye_mps) + i] = {
-            'aye': False,
-            'id': no_mps[i]
-        }
-
-
-    for member in all_mps:
-        if member['id'] in settings['testing_mps']:
-            all_mps.remove(member)
+    for member in no_mps:
+        if member not in settings['testing_mps']:
+            all_mps.append({
+                'aye': False,
+                'id': member
+            })
 
     shuffle(all_mps)
 
     test_folds = [list(element) for element in array_split(all_mps, settings['no_of_folds'])]
 
-    ret = [{}] * settings['no_of_folds']
+    ret = []
 
-    for i in range(settings['no_of_folds']):
-        train = all_mps
-        for member in train:
-            if member in test_folds[i]:
-                train.remove(member)
-        ret[i] = {
-            'test': test_folds[i],
+    for test_fold in test_folds:
+        train = [member for member in all_mps if member not in test_fold]
+        ret.append({
+            'test': test_fold,
             'train': train
-        }
+        })
 
     return ret
 
@@ -161,13 +214,11 @@ def get_speech_texts(db_path, member, debate):
 
 def get_speeches(db_path, member_list, debates):
     """ Returns all the speeches in the given database that match the given settings """
-
     speeches = {}
     for member in member_list:
-        print(member['id'])
         speeches[member['id']] = []
         for debate in debates:
-            speeches[member['id']] += get_speech_texts(db_path, member, debate)
+            speeches[member['id']] = speeches[member['id']] + get_speech_texts(db_path, member, debate)
 
     return speeches
 
@@ -176,7 +227,7 @@ def fetch_speeches(speeches, mp_data):
     ret = []
 
     for member in mp_data:
-        ret += speeches[member['id']]
+        ret = ret + speeches[member['id']]
 
     return ret
 
@@ -305,6 +356,7 @@ def generate_classifier_data(aye_bags, no_bags, common_words):
     condensed_aye_bags = condense_bags(aye_bags, common_words)
     condensed_no_bags = condense_bags(no_bags, common_words)
     features = condensed_aye_bags + condensed_no_bags
+
     samples = []
 
     for _ in range(len(condensed_aye_bags)):
@@ -366,9 +418,8 @@ def compute_f1(settings, data):
         train_samples is a list containing only 1s and -1s
             (corresponding to the class ie an MP's vote) '''
     classifier.fit(train_features, train_samples)
-
     test_predictions = classifier.predict(test_features)
-    print('F1: {}'.format(f1_score(test_samples, test_predictions)))
+
     return f1_score(test_samples, test_predictions)
 
 
@@ -376,10 +427,6 @@ def compute_member_f1s(settings, data):
     """ Runs one loop of the cross-validation """
 
     train_features, train_samples, common_words = generate_train_data(settings, data['train'])
-
-    pickle.dump(train_features, open("train_features.p", "wb"))
-
-    pickle.dump(train_samples, open("train_samples.p", "wb"))
 
     test_features, test_samples, members = generate_test_data(common_words, settings, data['test'])
 
@@ -409,21 +456,19 @@ def compute_member_f1s(settings, data):
 
     member_predictions = []
 
-    for member in grouped_speeches:
-        member['aye_fraction'] = count_ayes(member['speeches']) / len(member['speeches'])
-        member['overall_prediction'] = 1 if member['aye_fraction'] > 0.5 else -1
-        member_votes.append(member['vote'])
-        member_predictions.append(member['overall_prediction'])
+    for member_id in settings['testing_mps']:
+        grouped_speeches[member_id]['aye_fraction'] = count_ayes(grouped_speeches[member_id]['speeches']) / len(grouped_speeches[member_id]['speeches'])
+        grouped_speeches[member_id]['overall_prediction'] = 1 if grouped_speeches[member_id]['aye_fraction'] > 0.5 else -1
+        member_votes.append(grouped_speeches[member_id]['vote'])
+        member_predictions.append(grouped_speeches[member_id]['overall_prediction'])
 
-    print(grouped_speeches)
+    #print(grouped_speeches)
 
-    pickle.dump(grouped_speeches, open("grouped_speeches.p", "wb"))
+    print('Accuracy by MP: {}%'.format(100 * accuracy_score(member_votes, member_predictions)))
+    print('F1 by MP: {}'.format(f1_score(member_votes, member_predictions)))
 
-    print('Accuracy by MP: {}%'.format(accuracy_score(member_votes, member_predictions)))
-    print('F1 by MP: {}%'.format(f1_score(member_votes, member_predictions)))
-
-    print('Accuracy by speech: {}%'.format(accuracy_score(test_samples, test_predictions)))
-    print('F1 by speech: {}%'.format(f1_score(test_samples, test_predictions)))
+    print('Accuracy by speech: {}%'.format(100 * accuracy_score(test_samples, test_predictions)))
+    print('F1 by speech: {}'.format(f1_score(test_samples, test_predictions)))
 
     return f1_score(test_samples, test_predictions)
 
@@ -549,13 +594,13 @@ def run():
         'black_list': [],
         'white_list': [],
         'bag_size': 100,
-        'max_bag_size': False,
+        'max_bag_size': True,
         'remove_stopwords': False,
         'stem_words': False,
         'group_numbers': False,
         'n_gram': 1,
-        'division_id': 102564,
-        'all_debates': False,
+        'division_id': 102565,
+        'all_debates': True,
         'debate_terms': ['iraq', 'terrorism', 'middle east', 'defence policy',
                          'defence in the world', 'afghanistan'],
         'no_of_folds': 10,
@@ -576,7 +621,6 @@ def run():
 
     member_data = train_data + test_data
 
-    print('Length: {}'.format(len(member_data)))
     settings['speeches'] = get_speeches(settings['db_path'], member_data, settings['debates'])
 
     print('Got speeches')
@@ -587,8 +631,8 @@ def run():
     print('Remove stopwords: {}'.format(settings['remove_stopwords']))
     print('Stem words: {}'.format(settings['stem_words']))
     print('Group numbers: {}'.format(settings['group_numbers']))
+    print()
 
-    pickle.dump(settings, open("settings.p", "wb"))
 
     data = {
         'train': train_data,
