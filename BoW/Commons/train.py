@@ -368,7 +368,7 @@ def compute_f1(settings, data):
     classifier.fit(train_features, train_samples)
 
     test_predictions = classifier.predict(test_features)
-
+    print('F1: {}'.format(f1_score(test_samples, test_predictions)))
     return f1_score(test_samples, test_predictions)
 
 
