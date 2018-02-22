@@ -7,6 +7,7 @@ from nltk import ngrams
 from nltk import PorterStemmer
 from nltk.corpus import stopwords
 from numpy import array_split
+from numpy import linalg
 from numpy import mean
 from random import shuffle
 from scipy import stats
@@ -349,6 +350,11 @@ def condense_bags(bags, words):
     return [[bag[word] for word in words] for bag in bags]
 
 
+def normalise(feature):
+    norm = linalg.norm(feature)
+    return [el / norm for el in feature]
+
+
 def generate_classifier_data(aye_bags, no_bags, common_words):
     """ Returns the features and samples in a form that can be used
          by a classifier, given the bags and most common words in them """
@@ -356,7 +362,7 @@ def generate_classifier_data(aye_bags, no_bags, common_words):
     condensed_aye_bags = condense_bags(aye_bags, common_words)
     condensed_no_bags = condense_bags(no_bags, common_words)
     features = condensed_aye_bags + condensed_no_bags
-
+    normalised_features = [normalise(feature) for feature in features]
     samples = []
 
     for _ in range(len(condensed_aye_bags)):
@@ -365,7 +371,7 @@ def generate_classifier_data(aye_bags, no_bags, common_words):
     for _ in range(len(condensed_no_bags)):
         samples.append(-1)
 
-    return features, samples
+    return normalised_features, samples
 
 
 def generate_train_data(settings, mp_list):
@@ -600,7 +606,7 @@ def run():
         'group_numbers': False,
         'n_gram': 1,
         'division_id': 102565,
-        'all_debates': True,
+        'all_debates': False,
         'debate_terms': ['iraq', 'terrorism', 'middle east', 'defence policy',
                          'defence in the world', 'afghanistan'],
         'no_of_folds': 10,
