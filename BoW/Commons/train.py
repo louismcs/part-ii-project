@@ -50,7 +50,7 @@ def get_debates(settings):
     return ret
 
 
-def get_test_mps(file_path):
+def get_members_from_file(file_path):
     """ Returns a list of ids of MPs to be reserved for testing given the file path """
 
     with open(file_path) as id_file:
@@ -164,19 +164,15 @@ def get_mp_folds(settings):
         non-overlapping lists (of equal/nearly equal length) of
         ids of mps matching the given settings """
 
-    member_list = get_all_member_ids(settings['db_path'], settings['debate_terms'],
-                                 settings['division_id'])
-
     member_data = []
-    for member in member_list:
-        if member not in settings['testing_mps']:
-            votes = {}
-            for division_id in settings['division_ids']:
-                votes[division_id] = is_aye_vote(settings['db_path'], division_id, member)
-            member_data.append({
-                'id': member,
-                'votes': votes
-            })
+    for member in settings['training_mps']:
+        votes = {}
+        for division_id in settings['division_ids']:
+            votes[division_id] = is_aye_vote(settings['db_path'], division_id, member)
+        member_data.append({
+            'id': member,
+            'votes': votes
+        })
 
     shuffle(member_data)
 
@@ -204,7 +200,7 @@ def get_speech_texts(db_path, member, debate):
 
     rows = curs.fetchall()
 
-    return [{'text': row[0], 'aye': member['aye'], 'member': member['id']} for row in rows]
+    return [{'text': row[0], 'votes': member['votes'], 'member': member['id']} for row in rows]
 
 
 def get_speeches(db_path, member_list, debates):
@@ -613,20 +609,30 @@ def run():
         'no_of_folds': 10,
         'entailment': True,
         'division_ids': [102564, 102565],
-        'test_mp_file': 'testdata_combined.txt'
+        'test_mp_file': 'test_data_combined.txt',
+        'train_mp_file': 'train_data_combined.txt'
     }
 
     settings['debates'] = get_debates(settings)
 
-    settings['testing_mps'] = get_test_mps(settings['test_mp_file'])
+    settings['testing_mps'] = get_members_from_file(settings['test_mp_file'])
+
+    settings['training_mps'] = get_members_from_file(settings['train_mp_file'])
 
     mp_folds = get_mp_folds(settings)
 
     train_data = mp_folds[0]['test'] + mp_folds[0]['train']
 
-    test_data = [{'id': member_id,
-                  'aye': is_aye_vote(settings['db_path'], settings['division_id'], member_id)}
-                 for member_id in settings['testing_mps']]
+    test_data = []
+
+    for member in settings['testing_mps']:
+        votes = {}
+        for division_id in settings['division_ids']:
+            votes[division_id] = is_aye_vote(settings['db_path'], division_id, member)
+        test_data.append({
+            'id': member,
+            'votes': votes
+        })
 
     member_data = train_data + test_data
 
