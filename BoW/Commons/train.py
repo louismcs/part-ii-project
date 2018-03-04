@@ -9,6 +9,7 @@ from nltk.corpus import stopwords
 from numpy import array_split
 from numpy import linalg
 from numpy import mean
+from numpy import std
 from random import shuffle
 from scipy import stats
 from sklearn import svm
@@ -352,7 +353,12 @@ def condense_bags(bags, words):
 
 def normalise(feature):
     norm = linalg.norm(feature)
-    return [el / norm for el in feature]
+    if norm == 0:
+        ret = feature
+    else:
+        ret = [el / norm for el in feature]
+
+    return ret
 
 
 def generate_classifier_data(aye_bags, no_bags, common_words):
@@ -579,6 +585,8 @@ def learn_settings(settings, mp_folds):
         if lower_n_mean > current_mean:
             settings['n_gram'] -= 2
             current_f1s = change_n_gram(settings, -1, lower_n_f1s, mp_folds)
+    
+    print('Average F1: {} ± {}'.format(mean(current_f1s), std(current_f1s)))
 
 
 def is_aye_vote(db_path, division_id, member_id):
@@ -605,12 +613,14 @@ def run():
         'stem_words': False,
         'group_numbers': False,
         'n_gram': 1,
-        'division_id': 102565,
+        'division_id': 102564,
         'all_debates': False,
         'debate_terms': ['iraq', 'terrorism', 'middle east', 'defence policy',
                          'defence in the world', 'afghanistan'],
         'no_of_folds': 10,
-
+        'entailment': True,
+        'division_ids': [102564, 102565]
+        
     }
 
     settings['debates'] = get_debates(settings)
@@ -640,11 +650,11 @@ def run():
     print()
 
 
-    data = {
+    ''' data = {
         'train': train_data,
         'test': test_data
     }
 
-    compute_member_f1s(settings, data)
+    compute_member_f1s(settings, data) '''
 
 run()

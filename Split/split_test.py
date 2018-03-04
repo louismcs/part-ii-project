@@ -31,8 +31,13 @@ def get_member_ids(db_path, debate_terms, division_id):
     for term in debate_terms:
         debates = debates.union(set(get_members_from_term(db_path, term, division_id)))
 
-    return list(debates)
+    return debates
 
+
+def intersect_member_ids(db_path, debate_terms, division_ids):
+    """ Given a list of terms, finds all the debates whose titles contain one or more of these terms and returns their ids """
+    member_sets = [get_member_ids(db_path, debate_terms, division_id) for division_id in division_ids]
+    return list(set.intersection(*member_sets))
 
 def is_aye_vote(db_path, division_id, member_id):
 
@@ -82,39 +87,45 @@ def get_number_of_speeches(db_path, debate_ids, member_ids):
 
     return curs.fetchone()[0]
 
-def choose_test_data(db_path, debate_terms, division_id):
-    member_ids = get_member_ids(db_path, debate_terms, division_id)
+def choose_test_data(db_path, debate_terms, division_ids):
+    member_ids = intersect_member_ids(db_path, debate_terms, division_ids)
     test_size = round(0.1 * len(member_ids))
     shuffle(member_ids)
     test_ids = member_ids[:test_size]
     train_ids = [member_id for member_id in member_ids if member_id not in test_ids]
 
-    test_ayes = 0
-    for test_id in test_ids:
-        if is_aye_vote(db_path, division_id, test_id):
-            test_ayes += 1
+    test_ayes = {}
+    test_percents = {}
+    train_ayes = {}
+    train_percents = {}
+    for division_id in division_ids:
+        #Make n of each variable in this section
+        test_ayes[division_id] = 0
+        for test_id in test_ids:
+            if is_aye_vote(db_path, division_id, test_id):
+                test_ayes[division_id] += 1
 
-    test_percent = 100 * test_ayes / len(test_ids)
+        test_percents[division_id] = 100 * test_ayes[division_id] / len(test_ids)
+        print('{}:\nTEST AYES: {}\nTEST AYE PERCENT: {}%'.format(division_id, test_ayes[division_id], test_percents[division_id]))
+        train_ayes[division_id] = 0
+        for train_id in train_ids:
+            if is_aye_vote(db_path, division_id, train_id):
+                train_ayes[division_id] += 1
 
-    train_ayes = 0
-    for train_id in train_ids:
-        if is_aye_vote(db_path, division_id, train_id):
-            train_ayes += 1
-
-    train_percent = 100 * train_ayes / len(train_ids)
-
+        train_percents[division_id] = 100 * train_ayes[division_id] / len(train_ids)
+        print('{}:\nTRAIN AYES: {}\nTRAIN AYE PERCENT: {}%'.format(division_id, train_ayes[division_id], train_percents[division_id]))
     debate_ids = get_debate_ids(db_path, debate_terms)
 
     test_speeches = get_number_of_speeches(db_path, debate_ids, test_ids)
 
     train_speeches = get_number_of_speeches(db_path, debate_ids, train_ids)
 
-    print('TEST AYES: {}\nTEST TOTAL: {}\nTEST AYES PERCENT: {}%\nTEST SPEECHES: {}\nTEST SPEECHES PER MP: {}\n'
-          .format(test_ayes, len(test_ids), test_percent, test_speeches, test_speeches / len(test_ids)))
-    print('TRAIN AYES: {}\nTRAIN TOTAL: {}\nTRAIN AYES PERCENT: {}%\nTRAIN SPEECHES: {}\nTRAIN SPEECHES PER MP: {}'
-          .format(train_ayes, len(train_ids), train_percent, train_speeches, train_speeches / len(train_ids)))
+    print('TEST TOTAL: {}\nTEST SPEECHES: {}\nTEST SPEECHES PER MP: {}\n'
+          .format(len(test_ids), test_speeches, test_speeches / len(test_ids)))
+    print('TRAIN TOTAL: {}\nTRAIN SPEECHES: {}\nTRAIN SPEECHES PER MP: {}'
+          .format(len(train_ids), train_speeches, train_speeches / len(train_ids)))
 
-    txt_file = open('testdata2.txt', 'w')
+    txt_file = open('testdata_combined.txt', 'w')
 
     for test_id in test_ids:
         txt_file.write('{}\n'.format(test_id))
@@ -124,7 +135,7 @@ def run():
     db_path = 'Data/Corpus/database.db'
     terms = ['iraq', 'terrorism', 'middle east',
              'defence policy', 'defence in the world', 'afghanistan']
-    division_id = 102564
-    choose_test_data(db_path, terms, division_id)
+    division_ids = [102564, 102565]
+    choose_test_data(db_path, terms, division_ids)
 
 run()
