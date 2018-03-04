@@ -164,35 +164,28 @@ def get_mp_folds(settings):
         non-overlapping lists (of equal/nearly equal length) of
         ids of mps matching the given settings """
 
-    aye_mps = get_aye_member_ids(settings['db_path'], settings['debate_terms'],
+    member_list = get_all_member_ids(settings['db_path'], settings['debate_terms'],
                                  settings['division_id'])
-    no_mps = get_no_member_ids(settings['db_path'], settings['debate_terms'],
-                               settings['division_id'])
 
-    all_mps = []
-
-    for member in aye_mps:
+    member_data = []
+    for member in member_list:
         if member not in settings['testing_mps']:
-            all_mps.append({
-                'aye': True,
-                'id': member
+            votes = {}
+            for division_id in settings['division_ids']:
+                votes[division_id] = is_aye_vote(settings['db_path'], division_id, member)
+            member_data.append({
+                'id': member,
+                'votes': votes
             })
 
-    for member in no_mps:
-        if member not in settings['testing_mps']:
-            all_mps.append({
-                'aye': False,
-                'id': member
-            })
+    shuffle(member_data)
 
-    shuffle(all_mps)
-
-    test_folds = [list(element) for element in array_split(all_mps, settings['no_of_folds'])]
+    test_folds = [list(element) for element in array_split(member_data, settings['no_of_folds'])]
 
     ret = []
 
     for test_fold in test_folds:
-        train = [member for member in all_mps if member not in test_fold]
+        train = [member for member in member_data if member not in test_fold]
         ret.append({
             'test': test_fold,
             'train': train
@@ -619,13 +612,13 @@ def run():
                          'defence in the world', 'afghanistan'],
         'no_of_folds': 10,
         'entailment': True,
-        'division_ids': [102564, 102565]
-        
+        'division_ids': [102564, 102565],
+        'test_mp_file': 'testdata_combined.txt'
     }
 
     settings['debates'] = get_debates(settings)
 
-    settings['testing_mps'] = get_test_mps('test-ids_{}.txt'.format(settings['division_id']))
+    settings['testing_mps'] = get_test_mps(settings['test_mp_file'])
 
     mp_folds = get_mp_folds(settings)
 

@@ -99,7 +99,6 @@ def choose_test_data(db_path, debate_terms, division_ids):
     train_ayes = {}
     train_percents = {}
     for division_id in division_ids:
-        #Make n of each variable in this section
         test_ayes[division_id] = 0
         for test_id in test_ids:
             if is_aye_vote(db_path, division_id, test_id):
@@ -113,7 +112,7 @@ def choose_test_data(db_path, debate_terms, division_ids):
                 train_ayes[division_id] += 1
 
         train_percents[division_id] = 100 * train_ayes[division_id] / len(train_ids)
-        print('{}:\nTRAIN AYES: {}\nTRAIN AYE PERCENT: {}%'.format(division_id, train_ayes[division_id], train_percents[division_id]))
+        print('TRAIN AYES: {}\nTRAIN AYE PERCENT: {}%\n'.format(train_ayes[division_id], train_percents[division_id]))
     debate_ids = get_debate_ids(db_path, debate_terms)
 
     test_speeches = get_number_of_speeches(db_path, debate_ids, test_ids)
@@ -125,17 +124,22 @@ def choose_test_data(db_path, debate_terms, division_ids):
     print('TRAIN TOTAL: {}\nTRAIN SPEECHES: {}\nTRAIN SPEECHES PER MP: {}'
           .format(len(train_ids), train_speeches, train_speeches / len(train_ids)))
 
-    txt_file = open('testdata_combined.txt', 'w')
+    test_file = open('test_data_{}.txt'.format(division_ids[0]), 'w')
 
     for test_id in test_ids:
-        txt_file.write('{}\n'.format(test_id))
+        test_file.write('{}\n'.format(test_id))
+    
+    train_file = open('train_data_{}.txt'.format(division_ids[0]), 'w')
 
+    for train_id in train_ids:
+        train_file.write('{}\n'.format(train_id))
+    
 
 def run():
     db_path = 'Data/Corpus/database.db'
     terms = ['iraq', 'terrorism', 'middle east',
              'defence policy', 'defence in the world', 'afghanistan']
-    division_ids = [102564, 102565]
+    division_ids = [102565]
     choose_test_data(db_path, terms, division_ids)
 
 run()
