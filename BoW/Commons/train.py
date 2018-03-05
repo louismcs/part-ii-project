@@ -145,20 +145,6 @@ def get_no_member_ids(db_path, debate_terms, division_id):
     return list(debates)
 
 
-def get_mps(settings, vote):
-    """ Returns a list of mp ids who voted a given way in a given division """
-    conn = sqlite3.connect(settings['db_path'])
-    curs = conn.cursor()
-
-    curs.execute('''SELECT ID FROM MEMBER
-                    INNER JOIN VOTE ON VOTE.MEMBER_ID = MEMBER.ID
-                    WHERE VOTE.DIVISION_ID=? AND VOTE.VOTE=?''', (settings['division_id'], vote))
-
-    rows = curs.fetchall()
-
-    return [row[0] for row in rows]
-
-
 def get_mp_folds(settings):
     """ Given the number of folds, returns that number of
         non-overlapping lists (of equal/nearly equal length) of
@@ -296,7 +282,21 @@ def generate_word_list(body, settings):
     return get_n_grams(word_list, settings['n_gram'])
 
 
-def parse_ems(settings, mp_data):
+def generate_question_bag(division_id, settings):
+
+    ret = collections.Counter()
+
+    with open('Data/motion{}.txt'.format(division_id), 'r') as motion_file:
+        motion = motion_file.readlines()[0]
+
+    word_list = generate_word_list(motion, settings)
+
+    for word in word_list:
+        ret[word] += 1
+
+    return ret
+
+def parse_ems(settings, mp_data, train):
     """ Parses a train ems file and creates the corresponding bags of words"""
 
     question_bags = {}
@@ -311,29 +311,46 @@ def parse_ems(settings, mp_data):
 
     sum_bag = collections.Counter()
 
+    members = {}
+
     for speech in speeches:
+        if speech['member'] not in members:
+            members[speech['member']] = speech['votes']
         word_list = generate_word_list(speech['text'], settings)
         bag = collections.Counter()
         for word in word_list:
             bag[word] += 1
             sum_bag[word] += 1
-
-        for division_id in settings['division_ids']:
-            if speech['votes'][division_id]:
+        if train:
+            for division_id in settings['division_ids']:
+                if speech['votes'][division_id]:
+                    aye_features.append({
+                        'speech_bag': bag,
+                        'question_bag': question_bags[division_id],
+                        'member': speech['member']
+                    })
+                else:
+                    no_features.append({
+                        'speech_bag': bag,
+                        'question_bag': question_bags[division_id],
+                        'member': speech['member']
+                    })
+        else:
+            if speech['votes'][settings['test_division']]:
                 aye_features.append({
                     'speech_bag': bag,
-                    'question_bag': question_bags[division_id],
-                    'member_id':  speech['member']
+                    'question_bag': question_bags[settings['test_division']],
+                    'member': speech['member']
                 })
             else:
                 no_features.append({
                     'speech_bag': bag,
-                    'question_bag': question_bags[division_id],
-                    'member_id':  speech['member']
+                    'question_bag': question_bags[settings['test_division']],
+                    'member': speech['member']
                 })
 
 
-    return aye_features, no_features, sum_bag
+    return aye_features, no_features, sum_bag, members
 
 
 def condense_bags(features, words):
@@ -380,7 +397,7 @@ def generate_train_data(settings, mp_list):
     """ Returns the features and samples in a form that can be used
          by a classifier, given the filenames for the data """
 
-    aye_features, no_features, sum_bag = parse_ems(settings, mp_list)
+    aye_features, no_features, sum_bag, _ = parse_ems(settings, mp_list, True)
     if settings['max_bag_size']:
         common_words = [word[0] for word in sum_bag.most_common(settings['bag_size'])]
     else:
@@ -398,11 +415,11 @@ def generate_test_data(common_words, settings, mp_list):
     """ Returns the features and samples in a form that can be used
          by a classifier, given the filenames for the data """
 
-    aye_features, no_features, _ = parse_ems(settings, mp_list)
+    aye_features, no_features, _, members = parse_ems(settings, mp_list, False)
 
     features, samples = generate_classifier_data(aye_features, no_features, common_words)
 
-    return features, samples
+    return features, samples, members
 
 
 def count_ayes(speeches):
@@ -414,31 +431,29 @@ def count_ayes(speeches):
     return ret
 
 
+def get_complete_bags(features):
+
+    return [feature['speech_bag'] + feature['question_bag'] for feature in features]
+
 def compute_f1(settings, data):
     """ Runs one loop of the cross-validation """
 
     train_features, train_samples, common_words = generate_train_data(settings, data['train'])
 
-    test_features, test_samples = generate_test_data(common_words, settings, data['test'])
+    test_features, test_samples, _ = generate_test_data(common_words, settings, data['test'])
 
     classifier = svm.SVC()
     ''' train_features is a list of word bags
         train_samples is a list containing only 1s and -1s
             (corresponding to the class ie an MP's vote) '''
 
-    classifier_train_features = []
+    
 
-    for train_feature in train_features:
-        classifier_train_features.append(train_feature['bag'])
+    complete_train_features = get_complete_bags(train_features)
+    complete_test_features = get_complete_bags(test_features)
 
-
-    classifier_test_features = []
-
-    for test_feature in test_features:
-        classifier_test_features.append(test_feature['bag'])
-
-    classifier.fit(classifier_train_features, train_samples)
-    test_predictions = classifier.predict(classifier_test_features)
+    classifier.fit(complete_train_features, train_samples)
+    test_predictions = classifier.predict(complete_test_features)
 
     return f1_score(test_samples, test_predictions)
 
@@ -448,27 +463,31 @@ def compute_member_f1s(settings, data):
 
     train_features, train_samples, common_words = generate_train_data(settings, data['train'])
 
-    test_features, test_samples = generate_test_data(common_words, settings, data['test'])
+    test_features, test_samples, members = generate_test_data(common_words, settings, data['test'])
 
     classifier = svm.SVC()
     ''' train_features is a list of word bags
         train_samples is a list containing only 1s and -1s
             (corresponding to the class ie an MP's vote) '''
-    classifier.fit(train_features, train_samples)
+    
+    complete_train_features = get_complete_bags(train_features)
+    complete_test_features = get_complete_bags(test_features)
 
-    test_predictions = classifier.predict(test_features)
+    classifier.fit(complete_train_features, train_samples)
+
+    test_predictions = classifier.predict(complete_test_features)
 
     grouped_speeches = {}
 
     for member_id in settings['testing_mps']:
         grouped_speeches[member_id] = {
-            'speeches': [],
-            'vote': test_samples[members.index(member_id)]
+            'votes': members[member_id],
+            'speeches': []
         }
 
-    for i in range(len(members)):
-        grouped_speeches[members[i]]['speeches'].append({
-            'feature': test_features[i],
+    for i, feature in enumerate(test_features):
+        grouped_speeches[feature['member']['member_id']]['speeches'].append({
+            'feature': complete_test_features[i],
             'prediction': test_predictions[i]
         })
 
@@ -479,7 +498,7 @@ def compute_member_f1s(settings, data):
     for member_id in settings['testing_mps']:
         grouped_speeches[member_id]['aye_fraction'] = count_ayes(grouped_speeches[member_id]['speeches']) / len(grouped_speeches[member_id]['speeches'])
         grouped_speeches[member_id]['overall_prediction'] = 1 if grouped_speeches[member_id]['aye_fraction'] > 0.5 else -1
-        member_votes.append(grouped_speeches[member_id]['vote'])
+        member_votes.append(1 if grouped_speeches[member_id]['votes'][settings['test_division']] else -1)
         member_predictions.append(grouped_speeches[member_id]['overall_prediction'])
 
     #print(grouped_speeches)
@@ -621,7 +640,7 @@ def run():
         'stem_words': False,
         'group_numbers': False,
         'n_gram': 1,
-        'division_id': 102564,
+        'test_division': 102564,
         'all_debates': False,
         'debate_terms': ['iraq', 'terrorism', 'middle east', 'defence policy',
                          'defence in the world', 'afghanistan'],
