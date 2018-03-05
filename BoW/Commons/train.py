@@ -299,13 +299,15 @@ def generate_word_list(body, settings):
 def parse_ems(settings, mp_data):
     """ Parses a train ems file and creates the corresponding bags of words"""
 
+    question_bags = {}
+
+    for division_id in settings['division_ids']:
+        question_bags[division_id] = generate_question_bag(division_id, settings)
+
     speeches = fetch_speeches(settings['speeches'], mp_data)
 
-    aye_bags = []
-    no_bags = []
-
-    aye_members = []
-    no_members = []
+    aye_features = []
+    no_features = []
 
     sum_bag = collections.Counter()
 
@@ -316,28 +318,28 @@ def parse_ems(settings, mp_data):
             bag[word] += 1
             sum_bag[word] += 1
 
-        if speech['aye']:
-            aye_bags.append(bag)
-            aye_members.append(speech['member'])
-        else:
-            no_bags.append(bag)
-            no_members.append(speech['member'])
-
-    members = []
-
-    for member in aye_members:
-        members.append(member)
-
-    for member in no_members:
-        members.append(member)
-
-    return aye_bags, no_bags, sum_bag, members
+        for division_id in settings['division_ids']:
+            if speech['votes'][division_id]:
+                aye_features.append({
+                    'speech_bag': bag,
+                    'question_bag': question_bags[division_id],
+                    'member_id':  speech['member']
+                })
+            else:
+                no_features.append({
+                    'speech_bag': bag,
+                    'question_bag': question_bags[division_id],
+                    'member_id':  speech['member']
+                })
 
 
-def condense_bags(bags, words):
+    return aye_features, no_features, sum_bag
+
+
+def condense_bags(features, words):
     """ Returns an array of integer arrays containing the counts of the words
          (in the array provided) and an array of the Counter bags """
-    return [[bag[word] for word in words] for bag in bags]
+    return [[feature['bag'][word] for word in words] for feature in features]
 
 
 def normalise(feature):
@@ -350,30 +352,35 @@ def normalise(feature):
     return ret
 
 
-def generate_classifier_data(aye_bags, no_bags, common_words):
+def normalise_features(features):
+    for feature in features:
+        feature['bag'] = normalise(feature['bag'])
+
+    return features
+
+def generate_classifier_data(aye_features, no_features, common_words):
     """ Returns the features and samples in a form that can be used
          by a classifier, given the bags and most common words in them """
 
-    condensed_aye_bags = condense_bags(aye_bags, common_words)
-    condensed_no_bags = condense_bags(no_bags, common_words)
-    features = condensed_aye_bags + condensed_no_bags
-    normalised_features = [normalise(feature) for feature in features]
+    features = aye_features + no_features
+    features = condense_bags(features, common_words)
+    features = normalise_features(features)
     samples = []
 
-    for _ in range(len(condensed_aye_bags)):
+    for _ in range(len(aye_features)):
         samples.append(1)
 
-    for _ in range(len(condensed_no_bags)):
+    for _ in range(len(no_features)):
         samples.append(-1)
 
-    return normalised_features, samples
+    return features, samples
 
 
 def generate_train_data(settings, mp_list):
     """ Returns the features and samples in a form that can be used
          by a classifier, given the filenames for the data """
 
-    aye_bags, no_bags, sum_bag, _ = parse_ems(settings, mp_list)
+    aye_features, no_features, sum_bag = parse_ems(settings, mp_list)
     if settings['max_bag_size']:
         common_words = [word[0] for word in sum_bag.most_common(settings['bag_size'])]
     else:
@@ -382,7 +389,7 @@ def generate_train_data(settings, mp_list):
             if sum_bag[term] > 1:
                 common_words.append(term)
 
-    features, samples = generate_classifier_data(aye_bags, no_bags, common_words)
+    features, samples = generate_classifier_data(aye_features, no_features, common_words)
 
     return features, samples, common_words
 
@@ -391,11 +398,11 @@ def generate_test_data(common_words, settings, mp_list):
     """ Returns the features and samples in a form that can be used
          by a classifier, given the filenames for the data """
 
-    aye_bags, no_bags, _, members = parse_ems(settings, mp_list)
+    aye_features, no_features, _ = parse_ems(settings, mp_list)
 
-    features, samples = generate_classifier_data(aye_bags, no_bags, common_words)
+    features, samples = generate_classifier_data(aye_features, no_features, common_words)
 
-    return features, samples, members
+    return features, samples
 
 
 def count_ayes(speeches):
@@ -412,14 +419,26 @@ def compute_f1(settings, data):
 
     train_features, train_samples, common_words = generate_train_data(settings, data['train'])
 
-    test_features, test_samples, _ = generate_test_data(common_words, settings, data['test'])
+    test_features, test_samples = generate_test_data(common_words, settings, data['test'])
 
     classifier = svm.SVC()
     ''' train_features is a list of word bags
         train_samples is a list containing only 1s and -1s
             (corresponding to the class ie an MP's vote) '''
-    classifier.fit(train_features, train_samples)
-    test_predictions = classifier.predict(test_features)
+
+    classifier_train_features = []
+
+    for train_feature in train_features:
+        classifier_train_features.append(train_feature['bag'])
+
+
+    classifier_test_features = []
+
+    for test_feature in test_features:
+        classifier_test_features.append(test_feature['bag'])
+
+    classifier.fit(classifier_train_features, train_samples)
+    test_predictions = classifier.predict(classifier_test_features)
 
     return f1_score(test_samples, test_predictions)
 
@@ -429,7 +448,7 @@ def compute_member_f1s(settings, data):
 
     train_features, train_samples, common_words = generate_train_data(settings, data['train'])
 
-    test_features, test_samples, members = generate_test_data(common_words, settings, data['test'])
+    test_features, test_samples = generate_test_data(common_words, settings, data['test'])
 
     classifier = svm.SVC()
     ''' train_features is a list of word bags
