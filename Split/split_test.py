@@ -174,8 +174,6 @@ def choose_test_data(db_path, debate_terms, division_ids):
         no_of_speeches_in_range = (mean_test_speeches > mean_total_speeches - std_total_speeches
                                    and mean_test_speeches < mean_total_speeches + std_total_speeches)
 
-    print(n)
-    print('speeches std: {}'.format(std_total_speeches))
     print('Overall mean no. of speeches: {}'.format(mean_total_speeches))
     print('Test mean no. of speeches:    {}'.format(mean_test_speeches))
 
