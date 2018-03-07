@@ -119,9 +119,7 @@ def choose_test_data(db_path, debate_terms, division_ids):
         aye_votes[member_id] = {}
         for division_id in division_ids:
             aye_votes[member_id][division_id] = is_aye_vote(db_path, division_id, member_id)
-    n = 0
     while not (aye_percents_in_range and no_of_speeches_in_range):
-        n += 1
         shuffle(member_ids)
         test_ids = member_ids[:test_size]
         train_ids = [member_id for member_id in member_ids if member_id not in test_ids]

@@ -9,9 +9,9 @@ from nltk.corpus import stopwords
 from numpy import array_split
 from numpy import linalg
 from numpy import mean
+from numpy import sqrt
 from numpy import std
 from random import shuffle
-from scipy import stats
 from sklearn import svm
 from sklearn.metrics import accuracy_score
 from sklearn.metrics import f1_score
@@ -144,25 +144,89 @@ def get_no_member_ids(db_path, debate_terms, division_id):
 
     return list(debates)
 
+def get_member_no_of_speeches(db_path, debate_ids, member_id):
+    conn = sqlite3.connect(db_path)
+    curs = conn.cursor()
+
+    statement = ''' SELECT COUNT(*) FROM SPEECH WHERE DEBATE_URL IN ({debates})
+                    AND MEMBER_ID={member} '''.format(
+                        debates=','.join(['?']*len(debate_ids)),
+                        member=member_id)
+
+    curs.execute(statement, debate_ids)
+
+    return curs.fetchone()[0]
+
 
 def get_mp_folds(settings):
     """ Given the number of folds, returns that number of
         non-overlapping lists (of equal/nearly equal length) of
         ids of mps matching the given settings """
+    speech_counts = {}
+    votes = {}
+    speech_count_list = []
+    total_ayes = {}
+    for division_id in settings['division_ids']:
+        total_ayes[division_id] = 0
 
-    member_data = []
-    for member in settings['training_mps']:
-        votes = {}
+    for member_id in settings['training_mps']:
+        no_of_speeches = get_member_no_of_speeches(settings['db_path'], settings['debate_ids'], member_id)
+        speech_counts[member_id] = no_of_speeches
+        speech_count_list.append(no_of_speeches)
+        votes[member_id] = {}
         for division_id in settings['division_ids']:
-            votes[division_id] = is_aye_vote(settings['db_path'], division_id, member)
-        member_data.append({
-            'id': member,
-            'votes': votes
-        })
+            vote = is_aye_vote(settings['db_path'], division_id, member_id)
+            votes[member_id][division_id] = vote
+            if vote:
+                total_ayes[division_id] += 1
+    
+    total_percents = {}
+    for division_id in settings['division_ids']:
+        total_percents[division_id] = 100 * total_ayes[division_id] / len(settings['training_mps'])
 
-    shuffle(member_data)
+    mean_total_speeches = mean(speech_count_list)
+    std_total_speeches = std(speech_count_list) / sqrt(len(speech_count_list))
 
-    test_folds = [list(element) for element in array_split(member_data, settings['no_of_folds'])]
+    aye_percents_in_range = False
+    no_of_speeches_in_range = False
+    while not (aye_percents_in_range and no_of_speeches_in_range):
+        member_data = []
+        for member in settings['training_mps']:
+            member_data.append({
+                'id': member,
+                'votes': votes[member]
+            })
+
+        shuffle(member_data)
+
+        test_folds = [list(element) for element in array_split(member_data,
+                                                               settings['no_of_folds'])]
+
+        aye_percents_in_range = True
+        no_of_speeches_in_range = True
+        for fold in test_folds:
+            fold_speech_count = 0
+
+            for member in fold:
+                fold_speech_count += speech_counts[member['id']]
+
+            mean_fold_speech_count = fold_speech_count / len(fold)
+            no_of_speeches_in_range = (no_of_speeches_in_range
+                                       and mean_fold_speech_count >
+                                       mean_total_speeches + std_total_speeches
+                                       and mean_fold_speech_count <
+                                       mean_total_speeches - std_total_speeches)
+
+            for division_id in settings['division_id']:
+                aye_votes = 0
+                for member in fold:
+                    if member['votes'][division_id]:
+                        aye_votes += 1
+
+                aye_percent = 100 * aye_votes / len(fold)
+                aye_percents_in_range = (aye_percents_in_range
+                                         and aye_percent > total_percents[division_id] - 5
+                                         and aye_percent < total_percents[division_id] + 5)
 
     ret = []
 
@@ -545,16 +609,16 @@ def compute_member_f1s(settings, data):
 
 
 def compute_t(differences):
-    mean = sum(differences) / len(differences)
+    avg = sum(differences) / len(differences)
 
     squared_diff = 0
 
     for difference in differences:
-        squared_diff += pow(difference - mean, 2)
+        squared_diff += pow(difference - avg, 2)
 
     variance = squared_diff / (len(differences) - 1)
 
-    return mean / (math.sqrt(variance / len(differences)))
+    return avg / (math.sqrt(variance / len(differences)))
 
 
 def change_n_gram(settings, increment, current_f1s, mp_folds):
