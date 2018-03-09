@@ -1,18 +1,23 @@
 import collections
 import math
+import pickle
 import re
 import sqlite3
 
 from nltk import ngrams
 from nltk import PorterStemmer
 from nltk.corpus import stopwords
+from numpy import array
 from numpy import array_split
 from numpy import linalg
+from numpy import matmul
 from numpy import mean
 from numpy import sqrt
 from numpy import std
+from numpy.linalg import svd
 from random import shuffle
 from sklearn import svm
+from sklearn.decomposition import SparsePCA
 from sklearn.metrics import accuracy_score
 from sklearn.metrics import f1_score
 
@@ -170,7 +175,7 @@ def get_mp_folds(settings):
         total_ayes[division_id] = 0
 
     for member_id in settings['training_mps']:
-        no_of_speeches = get_member_no_of_speeches(settings['db_path'], settings['debate_ids'], member_id)
+        no_of_speeches = get_member_no_of_speeches(settings['db_path'], settings['debates'], member_id)
         speech_counts[member_id] = no_of_speeches
         speech_count_list.append(no_of_speeches)
         votes[member_id] = {}
@@ -185,18 +190,18 @@ def get_mp_folds(settings):
         total_percents[division_id] = 100 * total_ayes[division_id] / len(settings['training_mps'])
 
     mean_total_speeches = mean(speech_count_list)
-    std_total_speeches = std(speech_count_list) / sqrt(len(speech_count_list))
-
+    std_total_speeches = 4 * std(speech_count_list) / sqrt(len(speech_count_list))
     aye_percents_in_range = False
     no_of_speeches_in_range = False
+    member_data = []
+    for member in settings['training_mps']:
+        member_data.append({
+            'id': member,
+            'votes': votes[member]
+        })
+    n = 0
     while not (aye_percents_in_range and no_of_speeches_in_range):
-        member_data = []
-        for member in settings['training_mps']:
-            member_data.append({
-                'id': member,
-                'votes': votes[member]
-            })
-
+        n += 1
         shuffle(member_data)
 
         test_folds = [list(element) for element in array_split(member_data,
@@ -213,11 +218,11 @@ def get_mp_folds(settings):
             mean_fold_speech_count = fold_speech_count / len(fold)
             no_of_speeches_in_range = (no_of_speeches_in_range
                                        and mean_fold_speech_count >
-                                       mean_total_speeches + std_total_speeches
+                                       mean_total_speeches - std_total_speeches
                                        and mean_fold_speech_count <
-                                       mean_total_speeches - std_total_speeches)
+                                       mean_total_speeches + std_total_speeches)
 
-            for division_id in settings['division_id']:
+            for division_id in settings['division_ids']:
                 aye_votes = 0
                 for member in fold:
                     if member['votes'][division_id]:
@@ -225,11 +230,11 @@ def get_mp_folds(settings):
 
                 aye_percent = 100 * aye_votes / len(fold)
                 aye_percents_in_range = (aye_percents_in_range
-                                         and aye_percent > total_percents[division_id] - 5
-                                         and aye_percent < total_percents[division_id] + 5)
+                                         and aye_percent > total_percents[division_id] - 15
+                                         and aye_percent < total_percents[division_id] + 15)
 
     ret = []
-
+    print(n)
     for test_fold in test_folds:
         train = [member for member in member_data if member not in test_fold]
         ret.append({
@@ -496,8 +501,10 @@ def generate_train_data(settings, mp_list):
     else:
         common_words = []
         for term in sum_bag:
-            if sum_bag[term] > 1:
+            if sum_bag[term] > 3:
                 common_words.append(term)
+    
+    print(len(common_words))
 
     features, samples = generate_classifier_data(aye_features, no_features, common_words, settings['normalise'])
 
@@ -532,6 +539,18 @@ def get_complete_bags(features, entailment):
     
     return ret
 
+
+def compute_rank(s):
+    min_val = s[0] / 100
+
+    i = 0
+    val = s[i]
+    while val > min_val:
+        i += 1
+        val = s[i]
+
+    return i - 1
+
 def compute_f1(settings, data):
     """ Runs one loop of the cross-validation """
 
@@ -546,10 +565,35 @@ def compute_f1(settings, data):
 
     
 
-    complete_train_features = get_complete_bags(train_features, settings['entailment'])
-    complete_test_features = get_complete_bags(test_features, settings['entailment'])
-    classifier.fit(complete_train_features, train_samples)
-    test_predictions = classifier.predict(complete_test_features)
+    complete_train_features = array(get_complete_bags(train_features, settings['entailment']))
+    complete_test_features = array(get_complete_bags(test_features, settings['entailment']))
+
+    train_file = open('train.pkl', 'wb')
+    pickle.dump(complete_train_features, train_file)
+    train_file.close
+
+    test_file = open('test.pkl', 'wb')
+    pickle.dump(complete_test_features, test_file)
+    test_file.close
+
+    print('features saved')
+
+    _, sigma, v_transpose = svd(complete_train_features, full_matrices=True, compute_uv=True)
+
+    rank = compute_rank(sigma)
+
+    print('Rank: {}'.format(rank))
+
+    truncated_v = v_transpose[:rank].transpose()
+
+    reduced_train_features = matmul(complete_train_features, truncated_v)
+
+    reduced_test_features = matmul(complete_test_features, truncated_v)
+
+    print('Computed reduced matrices')
+
+    classifier.fit(reduced_train_features, train_samples)
+    test_predictions = classifier.predict(reduced_test_features)
 
     return f1_score(test_samples, test_predictions)
 
@@ -623,10 +667,8 @@ def compute_t(differences):
 
 def change_n_gram(settings, increment, current_f1s, mp_folds):
 
-    if settings['n_gram'] > 9 or settings['n_gram'] < 2:
-        significant_change = False
-    else:
-        significant_change = True
+
+    significant_change = settings['n_gram'] + increment in range(1, 10)
 
     while significant_change:
         settings['n_gram'] += increment
@@ -690,6 +732,8 @@ def learn_settings(settings, mp_folds):
     print(current_f1s)
 
     current_mean = mean(current_f1s)
+    
+    original_n_gram = settings['n_gram']
 
     if settings['n_gram'] > 1:
         settings['n_gram'] -= 1
@@ -699,7 +743,7 @@ def learn_settings(settings, mp_folds):
         lower_n_mean = 0
 
     if settings['n_gram'] < 10:
-        settings['n_gram'] += 2
+        settings['n_gram'] = original_n_gram + 1
         higher_n_f1s = [compute_f1(settings, mp_fold) for mp_fold in mp_folds]
         higher_n_mean = mean(higher_n_f1s)
     else:
@@ -710,9 +754,9 @@ def learn_settings(settings, mp_folds):
             current_f1s = change_n_gram(settings, 1, higher_n_f1s, mp_folds)
     else:
         if lower_n_mean > current_mean:
-            settings['n_gram'] -= 2
+            settings['n_gram'] = original_n_gram - 1
             current_f1s = change_n_gram(settings, -1, lower_n_f1s, mp_folds)
-    
+
     print('Average F1: {} ± {}'.format(mean(current_f1s), std(current_f1s)))
 
 
@@ -734,8 +778,8 @@ def run():
         'db_path': 'Data/Corpus/database.db',
         'black_list': [],
         'white_list': [],
-        'bag_size': 100,
-        'max_bag_size': True,
+        'bag_size': 500,
+        'max_bag_size': False,
         'remove_stopwords': False,
         'stem_words': False,
         'group_numbers': False,
@@ -759,6 +803,8 @@ def run():
     settings['training_mps'] = get_members_from_file(settings['train_mp_file'])
 
     mp_folds = get_mp_folds(settings)
+
+    print('Made splits')
 
     train_data = mp_folds[0]['test'] + mp_folds[0]['train']
 
