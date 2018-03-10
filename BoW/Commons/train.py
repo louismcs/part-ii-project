@@ -550,6 +550,8 @@ def compute_rank(s):
 
 
 def compute_linear_fold_f1s(settings, data, linear_param_values):
+    print('Doing linear fold')
+
     train_features, train_samples, common_words = generate_train_data(settings, data['train'])
 
     test_features, test_samples, _ = generate_test_data(common_words, settings, data['test'])
@@ -560,24 +562,27 @@ def compute_linear_fold_f1s(settings, data, linear_param_values):
 
     ret = []
 
-    for c_value in linear_param_values['cs']:
-        classifier = svm.SVC(C=c_value, kernel='linear', cache_size=settings['cache'])
+    for param_values in linear_param_values:
+        classifier = svm.SVC(C=param_values['c'], kernel='linear', cache_size=settings['cache'])
 
         classifier.fit(complete_train_features, train_samples)
 
         test_predictions = classifier.predict(complete_test_features)
 
+        score = f1_score(test_samples, test_predictions)
+
         ret.append({
-            'linear_params': {
-                'c': c_value,
-            },
-            'f1': f1_score(test_samples, test_predictions)
+            'linear_params': param_values,
+            'f1': score
         })
+
+        print('{} / {} F1: {}'.format(len(ret), len(linear_param_values), score))
 
     return ret
 
 
 def compute_rbf_fold_f1s(settings, data, rbf_param_values):
+    print('Doing rbf fold')
     train_features, train_samples, common_words = generate_train_data(settings, data['train'])
 
     test_features, test_samples, _ = generate_test_data(common_words, settings, data['test'])
@@ -588,26 +593,26 @@ def compute_rbf_fold_f1s(settings, data, rbf_param_values):
 
     ret = []
 
-    for c_value in rbf_param_values['cs']:
-        for gamma_value in rbf_param_values['gammas']:
-            classifier = svm.SVC(C=c_value, kernel='rbf', gamma=gamma_value, cache_size=settings['cache'])
+    for param_values in rbf_param_values:
+        classifier = svm.SVC(C=param_values['c'], kernel='rbf', gamma=param_values['gamma'], cache_size=settings['cache'])
 
-            classifier.fit(complete_train_features, train_samples)
+        classifier.fit(complete_train_features, train_samples)
 
-            test_predictions = classifier.predict(complete_test_features)
+        test_predictions = classifier.predict(complete_test_features)
 
-            ret.append({
-                'rbf_params': {
-                    'c': c_value,
-                    'gamma': gamma_value
-                },
-                'f1': f1_score(test_samples, test_predictions)
-            })
+        score = f1_score(test_samples, test_predictions)
+        ret.append({
+            'rbf_params': param_values,
+            'f1': score
+        })
+        
+        print('{} / {} F1: {}'.format(len(ret), len(rbf_param_values), score))
 
     return ret
 
 
 def compute_poly_fold_f1s(settings, data, poly_param_values):
+    print('Doing poly fold')
     train_features, train_samples, common_words = generate_train_data(settings, data['train'])
 
     test_features, test_samples, _ = generate_test_data(common_words, settings, data['test'])
@@ -618,25 +623,19 @@ def compute_poly_fold_f1s(settings, data, poly_param_values):
 
     ret = []
 
-    for c_value in poly_param_values['cs']:
-        for gamma_value in poly_param_values['gammas']:
-            for d_value in poly_param_values['ds']:
-                for r_value in poly_param_values['rs']:
-                    classifier = svm.SVC(C=c_value, kernel='poly', degree=d_value, gamma=gamma_value, coef0=r_value, cache_size=settings['cache'])
+    for param_values in poly_param_values:
+        classifier = svm.SVC(C=param_values['c'], kernel='poly', degree=param_values['d'], gamma=param_values['d'], coef0=param_values['r'], cache_size=settings['cache'])
 
-                    classifier.fit(complete_train_features, train_samples)
+        classifier.fit(complete_train_features, train_samples)
 
-                    test_predictions = classifier.predict(complete_test_features)
-
-                    ret.append({
-                        'poly_params': {
-                            'c': c_value,
-                            'gamma': gamma_value,
-                            'd': d_value,
-                            'r': r_value
-                        },
-                        'f1': f1_score(test_samples, test_predictions)
-                    })
+        test_predictions = classifier.predict(complete_test_features)
+        score = f1_score(test_samples, test_predictions)
+        ret.append({
+            'poly_params': param_values,
+            'f1': score
+        })
+        
+        print('{} / {} F1: {}'.format(len(ret), len(poly_param_values), score))
 
     return ret
 
