@@ -10,6 +10,8 @@ from nltk.corpus import stopwords
 from numpy import array
 from numpy import array_split
 from numpy import linalg
+from numpy import log10
+from numpy import logspace
 from numpy import matmul
 from numpy import mean
 from numpy import sqrt
@@ -199,9 +201,7 @@ def get_mp_folds(settings):
             'id': member,
             'votes': votes[member]
         })
-    n = 0
     while not (aye_percents_in_range and no_of_speeches_in_range):
-        n += 1
         shuffle(member_data)
 
         test_folds = [list(element) for element in array_split(member_data,
@@ -234,7 +234,6 @@ def get_mp_folds(settings):
                                          and aye_percent < total_percents[division_id] + 15)
 
     ret = []
-    print(n)
     for test_fold in test_folds:
         train = [member for member in member_data if member not in test_fold]
         ret.append({
@@ -503,8 +502,6 @@ def generate_train_data(settings, mp_list):
         for term in sum_bag:
             if sum_bag[term] > 3:
                 common_words.append(term)
-    
-    print(len(common_words))
 
     features, samples = generate_classifier_data(aye_features, no_features, common_words, settings['normalise'])
 
@@ -551,6 +548,99 @@ def compute_rank(s):
 
     return i - 1
 
+
+def compute_linear_fold_f1s(settings, data, linear_param_values):
+    train_features, train_samples, common_words = generate_train_data(settings, data['train'])
+
+    test_features, test_samples, _ = generate_test_data(common_words, settings, data['test'])
+
+    complete_train_features = array(get_complete_bags(train_features, settings['entailment']))
+
+    complete_test_features = array(get_complete_bags(test_features, settings['entailment']))
+
+    ret = []
+
+    for c_value in linear_param_values['cs']:
+        classifier = svm.SVC(C=c_value, kernel='linear', cache_size=settings['cache'])
+
+        classifier.fit(complete_train_features, train_samples)
+
+        test_predictions = classifier.predict(complete_test_features)
+
+        ret.append({
+            'linear_params': {
+                'c': c_value,
+            },
+            'f1': f1_score(test_samples, test_predictions)
+        })
+
+    return ret
+
+
+def compute_rbf_fold_f1s(settings, data, rbf_param_values):
+    train_features, train_samples, common_words = generate_train_data(settings, data['train'])
+
+    test_features, test_samples, _ = generate_test_data(common_words, settings, data['test'])
+
+    complete_train_features = array(get_complete_bags(train_features, settings['entailment']))
+
+    complete_test_features = array(get_complete_bags(test_features, settings['entailment']))
+
+    ret = []
+
+    for c_value in rbf_param_values['cs']:
+        for gamma_value in rbf_param_values['gammas']:
+            classifier = svm.SVC(C=c_value, kernel='rbf', gamma=gamma_value, cache_size=settings['cache'])
+
+            classifier.fit(complete_train_features, train_samples)
+
+            test_predictions = classifier.predict(complete_test_features)
+
+            ret.append({
+                'rbf_params': {
+                    'c': c_value,
+                    'gamma': gamma_value
+                },
+                'f1': f1_score(test_samples, test_predictions)
+            })
+
+    return ret
+
+
+def compute_poly_fold_f1s(settings, data, poly_param_values):
+    train_features, train_samples, common_words = generate_train_data(settings, data['train'])
+
+    test_features, test_samples, _ = generate_test_data(common_words, settings, data['test'])
+
+    complete_train_features = array(get_complete_bags(train_features, settings['entailment']))
+
+    complete_test_features = array(get_complete_bags(test_features, settings['entailment']))
+
+    ret = []
+
+    for c_value in poly_param_values['cs']:
+        for gamma_value in poly_param_values['gammas']:
+            for d_value in poly_param_values['ds']:
+                for r_value in poly_param_values['rs']:
+                    classifier = svm.SVC(C=c_value, kernel='poly', degree=d_value, gamma=gamma_value, coef0=r_value, cache_size=settings['cache'])
+
+                    classifier.fit(complete_train_features, train_samples)
+
+                    test_predictions = classifier.predict(complete_test_features)
+
+                    ret.append({
+                        'poly_params': {
+                            'c': c_value,
+                            'gamma': gamma_value,
+                            'd': d_value,
+                            'r': r_value
+                        },
+                        'f1': f1_score(test_samples, test_predictions)
+                    })
+
+    return ret
+
+
 def compute_f1(settings, data):
     """ Runs one loop of the cross-validation """
 
@@ -558,7 +648,14 @@ def compute_f1(settings, data):
 
     test_features, test_samples, _ = generate_test_data(common_words, settings, data['test'])
 
-    classifier = svm.SVC()
+    if settings['kernel'] == 'linear':
+        classifier = svm.SVC(C=settings['linear_c'], kernel='linear', cache_size=settings['cache'])
+    elif settings['kernel'] == 'rbf':
+        classifier = svm.SVC(C=settings['rbf_c'], kernel='rbf', gamma=settings['rbf_gamma'], cache_size=settings['cache'])
+    else:
+        #Assert kernel is poly
+        classifier = svm.SVC(C=settings['poly_c'], kernel='poly', degree=settings['poly_d'], gamma=settings['poly_gamma'], coef0=settings['poly_r'], cache_size=settings['cache'])
+
     ''' train_features is a list of word bags
         train_samples is a list containing only 1s and -1s
             (corresponding to the class ie an MP's vote) '''
@@ -568,13 +665,7 @@ def compute_f1(settings, data):
     complete_train_features = array(get_complete_bags(train_features, settings['entailment']))
     complete_test_features = array(get_complete_bags(test_features, settings['entailment']))
 
-    train_file = open('train.pkl', 'wb')
-    pickle.dump(complete_train_features, train_file)
-    train_file.close
-
-    test_file = open('test.pkl', 'wb')
-    pickle.dump(complete_test_features, test_file)
-    test_file.close
+    '''
 
     print('features saved')
 
@@ -590,10 +681,10 @@ def compute_f1(settings, data):
 
     reduced_test_features = matmul(complete_test_features, truncated_v)
 
-    print('Computed reduced matrices')
+    print('Computed reduced matrices') '''
 
-    classifier.fit(reduced_train_features, train_samples)
-    test_predictions = classifier.predict(reduced_test_features)
+    classifier.fit(complete_train_features, train_samples)
+    test_predictions = classifier.predict(complete_test_features)
 
     return f1_score(test_samples, test_predictions)
 
@@ -605,7 +696,14 @@ def compute_member_f1s(settings, data):
 
     test_features, test_samples, members = generate_test_data(common_words, settings, data['test'])
 
-    classifier = svm.SVC()
+    if settings['kernel'] == 'linear':
+        classifier = svm.SVC(C=settings['linear_c'], kernel='linear', cache_size=settings['cache'])
+    elif settings['kernel'] == 'rbf':
+        classifier = svm.SVC(C=settings['rbf_c'], kernel='rbf', gamma=settings['rbf_gamma'], cache_size=settings['cache'])
+    else:
+        #Assert kernel is poly
+        classifier = svm.SVC(C=settings['poly_c'], kernel='poly', degree=settings['poly_d'], gamma=settings['poly_gamma'], coef0=settings['poly_r'], cache_size=settings['cache'])
+
     ''' train_features is a list of word bags
         train_samples is a list containing only 1s and -1s
             (corresponding to the class ie an MP's vote) '''
@@ -641,8 +739,6 @@ def compute_member_f1s(settings, data):
         member_votes.append(1 if grouped_speeches[member_id]['votes'][settings['test_division']] else -1)
         member_predictions.append(grouped_speeches[member_id]['overall_prediction'])
 
-    #print(grouped_speeches)
-
     print('Accuracy by MP: {}%'.format(100 * accuracy_score(member_votes, member_predictions)))
     print('F1 by MP: {}'.format(f1_score(member_votes, member_predictions)))
 
@@ -650,6 +746,206 @@ def compute_member_f1s(settings, data):
     print('F1 by speech: {}'.format(f1_score(test_samples, test_predictions)))
 
     return f1_score(test_samples, test_predictions)
+
+
+def generate_linear_param_sets(linear_param_values):
+    linear_param_sets = []
+    for c_value in linear_param_values['cs']:
+        linear_param_sets.append({
+            'c': c_value
+        })
+
+    return linear_param_sets
+
+
+def generate_rbf_param_sets(rbf_param_values):
+    rbf_param_sets = []
+    for c_value in rbf_param_values['cs']:
+        for gamma_value in rbf_param_values['gammas']:
+            rbf_param_sets.append({
+                'c': c_value,
+                'gamma': gamma_value
+            })
+
+    return rbf_param_sets
+
+
+def generate_poly_param_sets(poly_param_values):
+    poly_param_sets = []
+    for c_value in poly_param_values['cs']:
+        for gamma_value in poly_param_values['gammas']:
+            for d_value in poly_param_values['ds']:
+                for r_value in poly_param_values['rs']:
+                    poly_param_sets.append({
+                        'c': c_value,
+                        'gamma': gamma_value,
+                        'd': d_value,
+                        'r': r_value
+                    })
+
+    return poly_param_sets
+
+
+def generate_lower_log_params(max_param, no_of_params, log_diff):
+    return logspace(log10(max_param) - (no_of_params - 1) * log10(log_diff), log10(max_param), no_of_params)
+
+
+def generate_higher_log_params(min_param, no_of_params, log_diff):
+    return logspace(log10(min_param), log10(min_param) + (no_of_params - 1) * log10(log_diff), no_of_params)
+
+
+def generate_lower_params(max_param, no_of_params, diff):
+    return [(diff * i) - (diff*(no_of_params - 1) - max_param) for i in range(no_of_params)]
+
+
+def generate_higher_params(min_param, no_of_params, diff):
+    return [(diff * i) + min_param for i in range(no_of_params)]
+
+
+def find_linear_params(settings, mp_folds, linear_param_values):
+    params_found = False
+    while not params_found:
+        print('Linear loop')
+        params_found = True
+        linear_param_sets = generate_linear_param_sets(linear_param_values)
+
+        f1_matrix = array([compute_linear_fold_f1s(settings, fold, linear_param_sets) for fold in mp_folds]).transpose()
+
+        max_f1_mean = -1
+
+        for i, param_f1s in f1_matrix:
+            if mean(param_f1s) > max_f1_mean:
+                max_linear_param_set = linear_param_sets[i]
+                max_f1s = param_f1s
+                max_f1_mean = mean(param_f1s)
+
+        if len(linear_param_values['cs']) > 1:
+            min_c = linear_param_values['cs'][0]
+            max_c = linear_param_values['cs'][len(linear_param_values['cs']) - 1]
+
+            if max_linear_param_set['c'] == min_c:
+                c_log_diff = linear_param_values['cs'][1] / linear_param_values['cs'][0]
+                linear_param_values['cs'] = generate_lower_log_params(min_c, 5, c_log_diff)
+                params_found = False
+            elif max_linear_param_set['c'] == max_c:
+                c_log_diff = linear_param_values['cs'][1] / linear_param_values['cs'][0]
+                linear_param_values['cs'] = generate_higher_log_params(max_c, 5, c_log_diff)
+                params_found = False
+
+    return max_f1s, max_linear_param_set
+
+
+def find_rbf_params(settings, mp_folds, rbf_param_values):
+    params_found = False
+    while not params_found:
+        print('Rbf loop')
+        params_found = True
+        rbf_param_sets = generate_rbf_param_sets(rbf_param_values)
+
+        f1_matrix = array([compute_rbf_fold_f1s(settings, fold, rbf_param_sets) for fold in mp_folds]).transpose()
+
+        max_f1_mean = -1
+
+        for i, param_f1s in f1_matrix:
+            if mean(param_f1s) > max_f1_mean:
+                max_rbf_param_set = rbf_param_sets[i]
+                max_f1s = param_f1s
+                max_f1_mean = mean(param_f1s)
+
+        if len(rbf_param_values['cs']) > 1:
+            min_c = rbf_param_values['cs'][0]
+            max_c = rbf_param_values['cs'][len(rbf_param_values['cs']) - 1]
+
+            if max_rbf_param_set['c'] == min_c:
+                c_log_diff = rbf_param_values['cs'][1] / rbf_param_values['cs'][0]
+                rbf_param_values['cs'] = generate_lower_log_params(min_c, 5, c_log_diff)
+                params_found = False
+            elif max_rbf_param_set['c'] == max_c:
+                c_log_diff = rbf_param_values['cs'][1] / rbf_param_values['cs'][0]
+                rbf_param_values['cs'] = generate_higher_log_params(max_c, 5, c_log_diff)
+                params_found = False
+
+        if len(rbf_param_values['gammas']) > 1:
+            min_gamma = rbf_param_values['gammas'][0]
+            max_gamma = rbf_param_values['gammas'][len(rbf_param_values['gammas']) - 1]
+
+            if max_rbf_param_set['gamma'] == min_gamma:
+                gamma_log_diff = rbf_param_values['gammas'][1] / rbf_param_values['gammas'][0]
+                rbf_param_values['gammas'] = generate_lower_log_params(min_gamma, 5, gamma_log_diff)
+                params_found = False
+            elif max_rbf_param_set['gamma'] == max_gamma:
+                gamma_log_diff = rbf_param_values['gammas'][1] / rbf_param_values['gammas'][0]
+                rbf_param_values['gammas'] = generate_higher_log_params(max_gamma, 5, gamma_log_diff)
+                params_found = False
+
+    return max_f1s, max_rbf_param_set
+
+
+def find_poly_params(settings, mp_folds, poly_param_values):
+    params_found = False
+    while not params_found:
+        print('Poly loop')
+        params_found = True
+        poly_param_sets = generate_poly_param_sets(poly_param_values)
+
+        f1_matrix = array([compute_poly_fold_f1s(settings, fold, poly_param_sets) for fold in mp_folds]).transpose()
+
+        max_f1_mean = -1
+
+        for i, param_f1s in f1_matrix:
+            if mean(param_f1s) > max_f1_mean:
+                max_poly_param_set = poly_param_sets[i]
+                max_f1s = param_f1s
+                max_f1_mean = mean(param_f1s)
+
+        if len(poly_param_values['cs']) > 1:
+            min_c = poly_param_values['cs'][0]
+            max_c = poly_param_values['cs'][len(poly_param_values['cs']) - 1]
+
+            if max_poly_param_set['c'] == min_c:
+                c_log_diff = poly_param_values['cs'][1] / poly_param_values['cs'][0]
+                poly_param_values['cs'] = generate_lower_log_params(min_c, 5, c_log_diff)
+                params_found = False
+            elif max_poly_param_set['c'] == max_c:
+                c_log_diff = poly_param_values['cs'][1] / poly_param_values['cs'][0]
+                poly_param_values['cs'] = generate_higher_log_params(max_c, 5, c_log_diff)
+                params_found = False
+
+        if len(poly_param_values['gammas']) > 1:
+            min_gamma = poly_param_values['gammas'][0]
+            max_gamma = poly_param_values['gammas'][len(poly_param_values['gammas']) - 1]
+
+            if max_poly_param_set['gamma'] == min_gamma:
+                gamma_log_diff = poly_param_values['gammas'][1] / poly_param_values['gammas'][0]
+                poly_param_values['gammas'] = generate_lower_log_params(min_gamma, 5, gamma_log_diff)
+                params_found = False
+            elif max_poly_param_set['gamma'] == max_gamma:
+                gamma_log_diff = poly_param_values['gammas'][1] / poly_param_values['gammas'][0]
+                poly_param_values['gammas'] = generate_higher_log_params(max_gamma, 5, gamma_log_diff)
+                params_found = False
+
+        if len(poly_param_values['ds']) > 1:
+            min_d = poly_param_values['ds'][0]
+            max_d = poly_param_values['ds'][len(poly_param_values['ds']) - 1]
+
+            if max_poly_param_set['d'] == min_d:
+                d_diff = poly_param_values['ds'][1] - poly_param_values['ds'][0]
+                poly_param_values['ds'] = generate_lower_params(min_d, 3, d_diff)
+                params_found = False
+            elif max_poly_param_set['d'] == max_d:
+                d_diff = poly_param_values['ds'][1] - poly_param_values['ds'][0]
+                poly_param_values['ds'] = generate_higher_params(max_d, 3, d_diff)
+                params_found = False
+
+        if len(poly_param_values['rs']) > 1:
+            max_r = poly_param_values['rs'][len(poly_param_values['rs']) - 1]
+
+            if max_poly_param_set['r'] == max_r:
+                r_diff = poly_param_values['rs'][1] - poly_param_values['rs'][0]
+                poly_param_values['rs'] = generate_higher_params(max_r, 3, r_diff)
+                params_found = False
+
+    return max_f1s, max_poly_param_set
 
 
 def compute_t(differences):
@@ -705,58 +1001,204 @@ def choose_boolean_setting(settings, setting, current_f1s, mp_folds):
     return current_f1s
 
 
+def generate_linear_values(no_of_cs):
+    c_values = logspace(-3, 3, no_of_cs)
+
+    return {
+        'cs': c_values
+    }
+
+
+def generate_rbf_values(no_of_cs, no_of_gammas):
+    c_values = logspace(-3, 3, no_of_cs)
+    gamma_values = logspace(-3, 3, no_of_gammas)
+
+    return {
+        'cs': c_values,
+        'gammas': gamma_values
+    }
+
+
+def generate_poly_values(no_of_cs, no_of_gammas, no_of_ds, no_of_rs):
+    c_values = logspace(-3, 3, no_of_cs)
+    gamma_values = logspace(-3, 3, no_of_gammas)
+    d_values = [i for i in range(2, 2 + no_of_ds)]
+    r_values = [i for i in range(0, no_of_rs)]
+
+    return {
+        'cs': c_values,
+        'gammas': gamma_values,
+        'ds': d_values,
+        'rs': r_values
+    }
+
+
+def generate_refined_linear_values(linear_params, no_of_cs):
+
+    c_values = logspace(log10(linear_params['c']) - 1, log10(linear_params['c']) + 1, no_of_cs)
+
+    return {
+        'cs': c_values
+    }
+
+
+def generate_refined_rbf_values(rbf_params, no_of_cs, no_of_gammas):
+
+    c_values = logspace(log10(rbf_params['c']) - 1, log10(rbf_params['c']) + 1, no_of_cs)
+
+    gamma_values = logspace(log10(rbf_params['gamma']) - 1, log10(rbf_params['gamma']) + 1, no_of_gammas)
+
+    return {
+        'cs': c_values,
+        'gammas': gamma_values
+    }
+
+
+def generate_refined_poly_values(poly_params, no_of_cs, no_of_gammas, no_of_ds, no_of_rs):
+
+    c_values = logspace(log10(poly_params['c']) - 1, log10(poly_params['c']) + 1, no_of_cs)
+
+    gamma_values = logspace(log10(poly_params['gamma']) - 1, log10(poly_params['gamma']) + 1, no_of_gammas)
+
+    d_values = [i for i in range(poly_params['d'], poly_params['d'] + no_of_ds)]
+
+    r_values = [i for i in range(poly_params['r'], poly_params['r'] + no_of_rs)]
+
+    return {
+        'cs': c_values,
+        'gammas': gamma_values,
+        'ds': d_values,
+        'rs': r_values
+    }
+
+
+def refine_linear_params(settings, mp_folds):
+
+    linear_param_values = generate_linear_values(7)
+
+    _, linear_params = find_linear_params(settings, mp_folds, linear_param_values)
+
+    linear_param_values = generate_refined_linear_values(linear_params, 7)
+
+    return find_linear_params(settings, mp_folds, linear_param_values)
+
+
+def refine_rbf_params(settings, mp_folds):
+
+    rbf_param_values = generate_rbf_values(7, 7)
+
+    _, rbf_params = find_rbf_params(settings, mp_folds, rbf_param_values)
+
+    rbf_param_values = generate_refined_rbf_values(rbf_params, 7, 7)
+
+    return find_rbf_params(settings, mp_folds, rbf_param_values)
+
+
+def refine_poly_params(settings, mp_folds):
+
+    poly_param_values = generate_poly_values(7, 7, 3, 1)
+
+    _, poly_params = find_poly_params(settings, mp_folds, poly_param_values)
+
+    poly_param_values = generate_refined_poly_values(poly_params, 7, 7, 1, 1)
+
+    return find_poly_params(settings, mp_folds, poly_param_values)
+
+
 def learn_settings(settings, mp_folds):
 
-    current_f1s = [compute_f1(settings, mp_fold) for mp_fold in mp_folds]
+    linear_param_values = generate_linear_values(7)
 
-    print(current_f1s)
+    linear_f1s, linear_params = find_linear_params(settings, mp_folds, linear_param_values)
 
-    current_f1s = change_n_gram(settings, 1, current_f1s, mp_folds)
+    linear_mean = mean(linear_f1s)
 
+    print('Linear mean: {}'.format(linear_mean))
+
+    rbf_param_values = generate_rbf_values(7, 7)
+
+    rbf_f1s, rbf_params = find_rbf_params(settings, mp_folds, rbf_param_values)
+
+    rbf_mean = mean(rbf_f1s)
+
+    print('RBF mean: {}'.format(rbf_mean))
+
+    poly_param_values = generate_poly_values(7, 7, 1, 1)
+
+    poly_f1s, poly_params = find_poly_params(settings, mp_folds, poly_param_values)
+
+    poly_mean = mean(poly_f1s)
+
+    print('Poly mean: {}'.format(poly_mean))
+
+    if linear_mean > rbf_mean:
+        if linear_mean > poly_mean:
+            settings['kernel'] = 'linear'
+            settings['linear_c'] = linear_params['c']
+            current_f1s = linear_f1s
+        else:
+            settings['kernel'] = 'poly'
+            settings['poly_c'] = poly_params['c']
+            settings['poly_gamma'] = poly_params['gamma']
+            settings['poly_d'] = poly_params['d']
+            settings['poly_r'] = poly_params['r']
+            current_f1s = poly_f1s
+    else:
+        if rbf_mean > poly_mean:
+            settings['kernel'] = 'rbf'
+            settings['rbf_c'] = rbf_params['c']
+            settings['rbf_gamma'] = rbf_params['gamma']
+            current_f1s = rbf_f1s
+        else:
+            settings['kernel'] = 'poly'
+            settings['poly_c'] = poly_params['c']
+            settings['poly_gamma'] = poly_params['gamma']
+            settings['poly_d'] = poly_params['d']
+            settings['poly_r'] = poly_params['r']
+            current_f1s = poly_f1s
+
+    print('Hyper parameters learned')
     print(current_f1s)
 
     current_f1s = choose_boolean_setting(settings, 'normalise', current_f1s, mp_folds)
 
-    print(current_f1s)
-    
     current_f1s = choose_boolean_setting(settings, 'remove_stopwords', current_f1s, mp_folds)
-
-    print(current_f1s)
 
     current_f1s = choose_boolean_setting(settings, 'stem_words', current_f1s, mp_folds)
 
-    print(current_f1s)
-
     current_f1s = choose_boolean_setting(settings, 'group_numbers', current_f1s, mp_folds)
 
+    print('Boolean settings learned')
     print(current_f1s)
 
-    current_mean = mean(current_f1s)
-    
-    original_n_gram = settings['n_gram']
+    current_f1s = change_n_gram(settings, 1, current_f1s, mp_folds)
 
-    if settings['n_gram'] > 1:
-        settings['n_gram'] -= 1
-        lower_n_f1s = [compute_f1(settings, mp_fold) for mp_fold in mp_folds]
-        lower_n_mean = mean(lower_n_f1s)
+    print('N gram learned')
+    print(current_f1s)
+
+    if settings['kernel'] == 'linear':
+        current_f1s, linear_params = refine_linear_params(settings, mp_folds)
+        settings['linear_c'] = linear_params['c']
+
+    elif settings['kernel'] == 'rbf':
+        current_f1s, rbf_params = refine_rbf_params(settings, mp_folds)
+        settings['rbf_c'] = rbf_params['c']
+        settings['rbf_gamma'] = rbf_params['gamma']
+
     else:
-        lower_n_mean = 0
+        #Assert kernel = poly
+        current_f1s, poly_params = refine_poly_params(settings, mp_folds)
+        settings['poly_c'] = poly_params['c']
+        settings['poly_gamma'] = poly_params['gamma']
+        settings['poly_d'] = poly_params['d']
+        settings['poly_r'] = poly_params['r']
 
-    if settings['n_gram'] < 10:
-        settings['n_gram'] = original_n_gram + 1
-        higher_n_f1s = [compute_f1(settings, mp_fold) for mp_fold in mp_folds]
-        higher_n_mean = mean(higher_n_f1s)
-    else:
-        higher_n_mean = 0
+    settings['max_bag_size'] = False
 
-    if higher_n_mean > lower_n_mean:
-        if higher_n_mean > current_mean:
-            current_f1s = change_n_gram(settings, 1, higher_n_f1s, mp_folds)
-    else:
-        if lower_n_mean > current_mean:
-            settings['n_gram'] = original_n_gram - 1
-            current_f1s = change_n_gram(settings, -1, lower_n_f1s, mp_folds)
+    pickle.dump(settings, open('settings.p', 'wb'))
 
+    print('Hyper parameters refined')
+    print(current_f1s)
     print('Average F1: {} ± {}'.format(mean(current_f1s), std(current_f1s)))
 
 
@@ -778,8 +1220,8 @@ def run():
         'db_path': 'Data/Corpus/database.db',
         'black_list': [],
         'white_list': [],
-        'bag_size': 500,
-        'max_bag_size': False,
+        'bag_size': 100,
+        'max_bag_size': True,
         'remove_stopwords': False,
         'stem_words': False,
         'group_numbers': False,
@@ -793,7 +1235,8 @@ def run():
         'normalise': False,
         'division_ids': [102564, 102565],
         'test_mp_file': 'test_data_combined.txt',
-        'train_mp_file': 'train_data_combined.txt'
+        'train_mp_file': 'train_data_combined.txt',
+        'cache': 1024
     }
 
     settings['debates'] = get_debates(settings)
@@ -826,7 +1269,7 @@ def run():
     print('Got speeches')
 
     learn_settings(settings, mp_folds)
-    
+
     print('Normalisation: {}'.format(settings['normalise']))
     print('N-gram: {}'.format(settings['n_gram']))
     print('Remove stopwords: {}'.format(settings['remove_stopwords']))
